@@ -1,11 +1,5 @@
 // app/dashboard/page.tsx
-// Dashboard Page — Upgraded to Tailwind CSS v4
-//
-// v4 Changes in this file:
-// - Uses CSS variable colors: e.g. text-(--color-brand-darkblue)
-// - Custom utilities: btn-primary, card, input-field work as before
-// - All standard Tailwind classes still work the same way
-// - No breaking changes in JSX className usage for standard classes
+// Dashboard Page — Green/Gray/Blue Theme
 
 "use client";
 
@@ -43,16 +37,16 @@ const statsData = [
     value: "24",
     change: "+3 this week",
     icon: ShoppingCart,
-    bgColor: "bg-blue-50",
-    textColor: "text-blue-600",
+    bgColor: "bg-green-50",
+    textColor: "text-green-600",
   },
   {
     title: "In Escrow",
     value: "₦450,000",
     change: "6 active orders",
     icon: CreditCard,
-    bgColor: "bg-sky-50",
-    textColor: "text-sky-600",
+    bgColor: "bg-blue-50",
+    textColor: "text-blue-600",
   },
   {
     title: "In Transit",
@@ -159,10 +153,6 @@ const navItems = [
   },
 ];
 
-// ============================================================
-// STATUS BAR DATA
-// Extracted to array for cleaner rendering
-// ============================================================
 const statusBars = [
   {
     label: "Awaiting Payment",
@@ -194,9 +184,6 @@ const statusBars = [
   },
 ];
 
-// ============================================================
-// PENDING ACTIONS DATA
-// ============================================================
 const pendingActions = [
   {
     id: "EWB-002",
@@ -226,10 +213,10 @@ const pendingActions = [
     description: "iPhone 15 Pro — ₦850,000",
     actionLabel: "Confirm",
     icon: CheckCircle,
-    bg: "bg-blue-50",
-    border: "border-blue-100",
-    iconColor: "text-blue-500",
-    btnClass: "text-blue-700 bg-blue-100 hover:bg-blue-200",
+    bg: "bg-green-50",
+    border: "border-green-100",
+    iconColor: "text-green-600",
+    btnClass: "text-green-700 bg-green-100 hover:bg-green-200",
   },
 ];
 
@@ -240,20 +227,11 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    /*
-      ROOT CONTAINER
-      - flex: sidebar + main side by side
-      - h-screen: full viewport height
-      - overflow-hidden: prevents page-level scroll
-        (main content scrolls internally)
-    */
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-
       {/* ==================================================
           SIDEBAR
       ================================================== */}
 
-      {/* Dark overlay for mobile when sidebar is open */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-20 lg:hidden"
@@ -262,17 +240,12 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Sidebar panel */}
       <aside
         className={[
-          // Layout
           "fixed lg:static inset-y-0 left-0 z-30",
           "w-64 flex flex-col",
-          // Appearance
           "bg-white border-r border-gray-100",
-          // Animation
           "transition-transform duration-300 ease-in-out",
-          // Mobile: slide in/out. Desktop: always visible
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         ].join(" ")}
       >
@@ -283,17 +256,14 @@ export default function DashboardPage() {
             className="flex items-center gap-2 group"
             aria-label="EaseWaybill Home"
           >
-            {/* Icon */}
-            <div className="bg-blue-600 text-white p-1.5 rounded-lg group-hover:bg-blue-700 transition-colors">
+            <div className="bg-green-600 text-white p-1.5 rounded-lg group-hover:bg-green-700 transition-colors">
               <Package size={20} />
             </div>
-            {/* Wordmark */}
-            <span className="text-lg font-bold text-blue-900">
-              ease<span className="text-blue-500">waybill</span>
+            <span className="text-lg font-bold text-gray-900">
+              ease<span className="text-green-500">waybill</span>
             </span>
           </Link>
 
-          {/* Mobile close button */}
           <button
             className="lg:hidden p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             onClick={() => setSidebarOpen(false)}
@@ -316,16 +286,13 @@ export default function DashboardPage() {
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl",
                 "font-medium text-sm transition-all duration-200",
                 item.active
-                  ? // Active state — solid blue
-                    "bg-blue-600 text-white shadow-md shadow-blue-200"
-                  : // Inactive state — subtle hover
-                    "text-gray-600 hover:bg-blue-50 hover:text-blue-600",
+                  ? "bg-green-600 text-white shadow-md shadow-green-200"
+                  : "text-gray-600 hover:bg-green-50 hover:text-green-700",
               ].join(" ")}
               aria-current={item.active ? "page" : undefined}
             >
               <item.icon size={20} aria-hidden="true" />
               <span>{item.label}</span>
-              {/* Chevron only on active item */}
               {item.active && (
                 <ChevronRight
                   size={16}
@@ -339,23 +306,18 @@ export default function DashboardPage() {
 
         {/* ---- User Profile + Logout ---- */}
         <div className="p-4 border-t border-gray-100 shrink-0">
-          {/* User info */}
           <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors mb-2 text-left">
-            {/* Avatar with gradient */}
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-sky-400 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-400 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
               JD
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-800 truncate">
                 John Doe
               </p>
-              <p className="text-xs text-gray-500 truncate">
-                john@example.com
-              </p>
+              <p className="text-xs text-gray-500 truncate">john@example.com</p>
             </div>
           </button>
 
-          {/* Logout */}
           <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-colors text-sm font-medium">
             <LogOut size={18} aria-hidden="true" />
             Logout
@@ -367,25 +329,20 @@ export default function DashboardPage() {
           MAIN CONTENT AREA
       ================================================== */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-
         {/* ---- Top Header Bar ---- */}
         <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 shrink-0">
           <div className="flex items-center justify-between gap-4">
-
-            {/* Left: Hamburger + Title */}
             <div className="flex items-center gap-4 min-w-0">
-              {/* Mobile hamburger */}
               <button
-                className="lg:hidden p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="lg:hidden p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open navigation"
               >
                 <Menu size={22} />
               </button>
 
-              {/* Page title */}
               <div>
-                <h1 className="text-xl font-bold text-blue-900 leading-tight">
+                <h1 className="text-xl font-bold text-gray-900 leading-tight">
                   Dashboard
                 </h1>
                 <p className="text-xs text-gray-400 hidden sm:block mt-0.5">
@@ -394,11 +351,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Right: Search + Bell + Avatar */}
             <div className="flex items-center gap-2 sm:gap-3">
-
-              {/* Search — hidden on mobile */}
-              <div className="hidden md:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 w-52 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <div className="hidden md:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 w-52 focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-100 transition-all">
                 <Search
                   size={15}
                   className="text-gray-400 shrink-0"
@@ -412,22 +366,19 @@ export default function DashboardPage() {
                 />
               </div>
 
-              {/* Notification bell */}
               <button
-                className="relative p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                className="relative p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-xl transition-colors"
                 aria-label="View notifications"
               >
                 <Bell size={21} />
-                {/* Unread dot */}
                 <span
                   className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"
                   aria-label="3 unread notifications"
                 />
               </button>
 
-              {/* User avatar */}
               <div
-                className="w-9 h-9 bg-gradient-to-br from-blue-500 to-sky-400 rounded-full flex items-center justify-center text-white font-bold text-sm cursor-pointer shrink-0 hover:ring-2 hover:ring-blue-300 transition-all"
+                className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-400 rounded-full flex items-center justify-center text-white font-bold text-sm cursor-pointer shrink-0 hover:ring-2 hover:ring-green-300 transition-all"
                 role="button"
                 aria-label="User menu"
                 tabIndex={0}
@@ -443,12 +394,11 @@ export default function DashboardPage() {
           className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6"
           id="main-content"
         >
-
           {/* ==========================================
               WELCOME BANNER
           ========================================== */}
           <section
-            className="bg-gradient-to-r from-blue-600 to-sky-500 rounded-2xl p-6 text-white"
+            className="bg-gradient-to-r from-green-600 to-green-500 rounded-2xl p-6 text-white"
             aria-label="Welcome banner"
           >
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -456,7 +406,7 @@ export default function DashboardPage() {
                 <h2 className="text-2xl font-bold mb-1">
                   Good evening, John! 👋
                 </h2>
-                <p className="text-blue-100 text-sm">
+                <p className="text-green-100 text-sm">
                   You have{" "}
                   <strong className="text-white font-semibold">
                     3 pending actions
@@ -465,10 +415,9 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {/* New Order button */}
               <Link
                 href="/dashboard/orders/create"
-                className="flex items-center gap-2 bg-white text-blue-600 font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-50 active:scale-95 transition-all shadow-md hover:shadow-lg whitespace-nowrap shrink-0"
+                className="flex items-center gap-2 bg-white text-green-700 font-semibold px-5 py-2.5 rounded-xl hover:bg-green-50 active:scale-95 transition-all shadow-md hover:shadow-lg whitespace-nowrap shrink-0"
               >
                 <Plus size={18} aria-hidden="true" />
                 New Order
@@ -486,32 +435,25 @@ export default function DashboardPage() {
                   key={stat.title}
                   className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200"
                 >
-                  {/* Card header: icon + badge */}
                   <div className="flex items-center justify-between mb-4">
-                    {/* Icon container */}
                     <div
                       className={`w-12 h-12 ${stat.bgColor} ${stat.textColor} rounded-xl flex items-center justify-center`}
                       aria-hidden="true"
                     >
                       <stat.icon size={24} />
                     </div>
-
-                    {/* Trending badge */}
                     <span className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
                       <TrendingUp size={11} aria-hidden="true" />
                       Active
                     </span>
                   </div>
 
-                  {/* Value */}
-                  <p className="text-2xl font-bold text-blue-900 mb-0.5">
+                  <p className="text-2xl font-bold text-gray-900 mb-0.5">
                     {stat.value}
                   </p>
-                  {/* Label */}
                   <p className="text-sm font-medium text-gray-500 mb-0.5">
                     {stat.title}
                   </p>
-                  {/* Change */}
                   <p className="text-xs text-gray-400">{stat.change}</p>
                 </article>
               ))}
@@ -520,22 +462,16 @@ export default function DashboardPage() {
 
           {/* ==========================================
               MAIN 2-COLUMN GRID
-              Left (2/3): Orders Table
-              Right (1/3): Actions + Status
           ========================================== */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-            {/* ----------------------------------------
-                RECENT ORDERS TABLE
-            ---------------------------------------- */}
+            {/* ---- Recent Orders Table ---- */}
             <section
               className="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
               aria-label="Recent orders"
             >
-              {/* Card header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div>
-                  <h3 className="font-bold text-blue-900 text-lg leading-tight">
+                  <h3 className="font-bold text-gray-900 text-lg leading-tight">
                     Recent Orders
                   </h3>
                   <p className="text-xs text-gray-400 mt-0.5">
@@ -544,25 +480,24 @@ export default function DashboardPage() {
                 </div>
                 <Link
                   href="/dashboard/orders"
-                  className="text-sm text-blue-600 font-medium hover:underline underline-offset-2 flex items-center gap-1"
+                  className="text-sm text-green-600 font-medium hover:underline underline-offset-2 flex items-center gap-1"
                 >
                   View All
                   <ChevronRight size={15} aria-hidden="true" />
                 </Link>
               </div>
 
-              {/* Scrollable table wrapper */}
               <div className="overflow-x-auto">
                 <table className="w-full" aria-label="Orders table">
                   <thead>
                     <tr className="bg-gray-50/80">
                       {[
-                        { label: "Order ID", hidden: false },
-                        { label: "Item", hidden: false },
-                        { label: "Buyer", hidden: true },   // sm:table-cell
-                        { label: "Amount", hidden: false },
-                        { label: "Status", hidden: false },
-                        { label: "Date", hidden: true },    // md:table-cell
+                        { label: "Order ID" },
+                        { label: "Item" },
+                        { label: "Buyer" },
+                        { label: "Amount" },
+                        { label: "Status" },
+                        { label: "Date" },
                       ].map((col) => (
                         <th
                           key={col.label}
@@ -570,18 +505,16 @@ export default function DashboardPage() {
                           className={[
                             "text-left text-xs font-semibold text-gray-500",
                             "uppercase tracking-wide px-5 py-3",
-                            // Responsive column hiding
                             col.label === "Buyer"
                               ? "hidden sm:table-cell"
                               : col.label === "Date"
-                              ? "hidden md:table-cell"
-                              : "",
+                                ? "hidden md:table-cell"
+                                : "",
                           ].join(" ")}
                         >
                           {col.label}
                         </th>
                       ))}
-                      {/* Empty column for action button */}
                       <th scope="col" className="px-5 py-3 w-10" />
                     </tr>
                   </thead>
@@ -590,56 +523,41 @@ export default function DashboardPage() {
                     {recentOrders.map((order) => (
                       <tr
                         key={order.id}
-                        className="hover:bg-blue-50/40 transition-colors duration-150"
+                        className="hover:bg-green-50/40 transition-colors duration-150"
                       >
-                        {/* Order ID */}
                         <td className="px-5 py-4">
-                          <span className="text-sm font-bold text-blue-600">
+                          <span className="text-sm font-bold text-green-600">
                             {order.id}
                           </span>
                         </td>
-
-                        {/* Item name */}
                         <td className="px-5 py-4">
                           <span className="text-sm font-medium text-gray-800 truncate max-w-[140px] block">
                             {order.item}
                           </span>
                         </td>
-
-                        {/* Buyer — hidden on xs */}
                         <td className="px-5 py-4 hidden sm:table-cell">
                           <span className="text-sm text-gray-600">
                             {order.buyer}
                           </span>
                         </td>
-
-                        {/* Amount */}
                         <td className="px-5 py-4">
                           <span className="text-sm font-semibold text-gray-800">
                             {order.amount}
                           </span>
                         </td>
-
-                        {/* Status badge */}
                         <td className="px-5 py-4">
-                          <span
-                            className={`status-badge ${order.statusColor}`}
-                          >
+                          <span className={`status-badge ${order.statusColor}`}>
                             {order.status}
                           </span>
                         </td>
-
-                        {/* Date — hidden on xs/sm */}
                         <td className="px-5 py-4 hidden md:table-cell">
                           <time className="text-xs text-gray-400">
                             {order.date}
                           </time>
                         </td>
-
-                        {/* View action */}
                         <td className="px-5 py-4">
                           <button
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-100 rounded-lg transition-colors"
                             aria-label={`View order ${order.id}`}
                           >
                             <Eye size={15} />
@@ -652,17 +570,14 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* ----------------------------------------
-                RIGHT COLUMN
-            ---------------------------------------- */}
+            {/* ---- Right Column ---- */}
             <div className="space-y-6">
-
-              {/* ---- Quick Actions Card ---- */}
+              {/* Quick Actions Card */}
               <section
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
                 aria-label="Quick actions"
               >
-                <h3 className="font-bold text-blue-900 text-lg mb-4">
+                <h3 className="font-bold text-gray-900 text-lg mb-4">
                   Quick Actions
                 </h3>
 
@@ -670,13 +585,13 @@ export default function DashboardPage() {
                   {/* Create Order */}
                   <Link
                     href="/dashboard/orders/create"
-                    className="flex items-center gap-3 p-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
+                    className="flex items-center gap-3 p-3 bg-green-50 hover:bg-green-100 rounded-xl transition-colors group"
                   >
-                    <div className="w-9 h-9 bg-blue-600 text-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                    <div className="w-9 h-9 bg-green-600 text-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
                       <Plus size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-blue-900">
+                      <p className="text-sm font-semibold text-gray-900">
                         Create Order
                       </p>
                       <p className="text-xs text-gray-500">
@@ -685,7 +600,7 @@ export default function DashboardPage() {
                     </div>
                     <ChevronRight
                       size={15}
-                      className="text-gray-400 group-hover:text-blue-600 shrink-0 transition-colors"
+                      className="text-gray-400 group-hover:text-green-600 shrink-0 transition-colors"
                       aria-hidden="true"
                     />
                   </Link>
@@ -693,13 +608,13 @@ export default function DashboardPage() {
                   {/* Track Shipment */}
                   <Link
                     href="/dashboard/shipments"
-                    className="flex items-center gap-3 p-3 bg-sky-50 hover:bg-sky-100 rounded-xl transition-colors group"
+                    className="flex items-center gap-3 p-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
                   >
-                    <div className="w-9 h-9 bg-sky-500 text-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                    <div className="w-9 h-9 bg-blue-500 text-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
                       <Truck size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-blue-900">
+                      <p className="text-sm font-semibold text-gray-900">
                         Track Shipment
                       </p>
                       <p className="text-xs text-gray-500">
@@ -708,7 +623,7 @@ export default function DashboardPage() {
                     </div>
                     <ChevronRight
                       size={15}
-                      className="text-gray-400 group-hover:text-sky-600 shrink-0 transition-colors"
+                      className="text-gray-400 group-hover:text-blue-600 shrink-0 transition-colors"
                       aria-hidden="true"
                     />
                   </Link>
@@ -722,12 +637,10 @@ export default function DashboardPage() {
                       <CreditCard size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-blue-900">
+                      <p className="text-sm font-semibold text-gray-900">
                         Payments
                       </p>
-                      <p className="text-xs text-gray-500">
-                        ₦450K in escrow
-                      </p>
+                      <p className="text-xs text-gray-500">₦450K in escrow</p>
                     </div>
                     <ChevronRight
                       size={15}
@@ -745,12 +658,10 @@ export default function DashboardPage() {
                       <MessageSquare size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-blue-900">
+                      <p className="text-sm font-semibold text-gray-900">
                         Messages
                       </p>
-                      <p className="text-xs text-gray-500">
-                        2 unread messages
-                      </p>
+                      <p className="text-xs text-gray-500">2 unread messages</p>
                     </div>
                     <ChevronRight
                       size={15}
@@ -761,23 +672,18 @@ export default function DashboardPage() {
                 </div>
               </section>
 
-              {/* ---- Order Status Summary Card ---- */}
+              {/* Order Status Summary Card */}
               <section
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
                 aria-label="Order status summary"
               >
-                <h3 className="font-bold text-blue-900 text-lg mb-4">
+                <h3 className="font-bold text-gray-900 text-lg mb-4">
                   Order Status
                 </h3>
 
-                {/* 
-                  Rendered from statusBars array
-                  Cleaner than repeating markup manually
-                */}
                 <div className="space-y-4">
                   {statusBars.map((bar) => (
                     <div key={bar.label}>
-                      {/* Label row */}
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
                           <div
@@ -792,7 +698,6 @@ export default function DashboardPage() {
                           {bar.count}
                         </span>
                       </div>
-                      {/* Progress bar */}
                       <div
                         className="w-full bg-gray-100 rounded-full h-1.5"
                         role="progressbar"
@@ -820,14 +725,13 @@ export default function DashboardPage() {
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
             aria-label="Pending actions"
           >
-            {/* Section header */}
             <div className="flex items-center gap-2 mb-5">
               <AlertTriangle
                 size={20}
                 className="text-orange-500"
                 aria-hidden="true"
               />
-              <h3 className="font-bold text-blue-900 text-lg">
+              <h3 className="font-bold text-gray-900 text-lg">
                 Pending Actions
               </h3>
               <span className="bg-orange-100 text-orange-600 text-xs font-bold px-2.5 py-0.5 rounded-full">
@@ -835,21 +739,17 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            {/* 3-column action cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {pendingActions.map((action) => (
                 <div
                   key={action.id}
                   className={`flex items-start gap-3 p-4 rounded-xl border ${action.bg} ${action.border}`}
                 >
-                  {/* Icon */}
                   <action.icon
                     size={20}
                     className={`${action.iconColor} mt-0.5 shrink-0`}
                     aria-hidden="true"
                   />
-
-                  {/* Content */}
                   <div>
                     <p className="text-sm font-semibold text-gray-800">
                       {action.title}
@@ -868,7 +768,6 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Bottom padding spacer */}
           <div className="h-6" aria-hidden="true" />
         </main>
       </div>

@@ -1,81 +1,53 @@
 /* app/globals.css */
-/* Tailwind CSS v4 - Clean Setup */
-
-/* ============================================================
-   STEP 1: @import statements MUST be at the very top
-   Google Fonts first, then Tailwind
-============================================================ */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
-/* ============================================================
-   STEP 2: @theme block
-   Replaces tailwind.config.ts — defines all design tokens
-   Generates CSS variables + utility classes automatically
-============================================================ */
 @theme {
-  --color-brand-blue: #1a73e8;
-  --color-brand-seablue: #0ea5e9;
-  --color-brand-lightblue: #e0f2fe;
-  --color-brand-darkblue: #1e3a5f;
+  /* Green replaces blue as the primary brand color */
+  --color-brand-green: #16a34a;
+  --color-brand-darkgreen: #15803d;
+  --color-brand-lightgreen: #dcfce7;
+  --color-brand-deepgreen: #14532d;
+
+  /* Neutral grays */
+  --color-brand-gray: #6b7280;
+  --color-brand-lightgray: #f1f5f9;
+  --color-brand-darkgray: #1f2937;
+
+  /* Accent blue (secondary, used sparingly) */
+  --color-brand-blue: #2563eb;
+  --color-brand-lightblue: #eff6ff;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
   --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
-/* ============================================================
-   STEP 3: Base styles
-============================================================ */
 @layer base {
   body {
     font-family: var(--font-sans);
-    background-color: #ffffff;
-    color: #1e3a5f;
+    background-color: #f9fafb;
+    color: #1f2937;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #15803d; }
 
-  ::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 10px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #0ea5e9;
-    border-radius: 10px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #0284c7;
-  }
-
-  :focus-visible {
-    outline: 2px solid #0ea5e9;
-    outline-offset: 2px;
-  }
+  :focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
 }
-
-/* ============================================================
-   STEP 4: Custom utilities
-   @utility = v4 replacement for @layer utilities
-============================================================ */
 
 @utility btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #2563eb;
+  background-color: #16a34a;
   color: #ffffff;
   padding-inline: 1.5rem;
   padding-block: 0.75rem;
@@ -83,32 +55,22 @@
   font-weight: 600;
   font-size: 0.875rem;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgb(37 99 235 / 0.3);
+  box-shadow: 0 4px 6px -1px rgb(22 163 74 / 0.25);
   cursor: pointer;
   border: none;
   text-decoration: none;
 
-  &:hover {
-    background-color: #1d4ed8;
-    box-shadow: 0 10px 15px -3px rgb(37 99 235 / 0.3);
-  }
-
-  &:active {
-    transform: scale(0.97);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
+  &:hover { background-color: #15803d; box-shadow: 0 10px 15px -3px rgb(22 163 74 / 0.25); }
+  &:active { transform: scale(0.97); }
+  &:disabled { opacity: 0.7; cursor: not-allowed; }
 }
 
 @utility btn-outline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #2563eb;
-  color: #2563eb;
+  border: 2px solid #16a34a;
+  color: #16a34a;
   background-color: transparent;
   padding-inline: 1.5rem;
   padding-block: calc(0.75rem - 2px);
@@ -119,20 +81,15 @@
   cursor: pointer;
   text-decoration: none;
 
-  &:hover {
-    background-color: #eff6ff;
-  }
-
-  &:active {
-    transform: scale(0.97);
-  }
+  &:hover { background-color: #f0fdf4; }
+  &:active { transform: scale(0.97); }
 }
 
 @utility input-field {
   width: 100%;
   padding-inline: 1rem;
   padding-block: 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   font-size: 0.875rem;
   color: #374151;
@@ -140,14 +97,8 @@
   transition: all 0.2s ease;
   outline: none;
 
-  &::placeholder {
-    color: #9ca3af;
-  }
-
-  &:focus {
-    border-color: transparent;
-    box-shadow: 0 0 0 2px #60a5fa;
-  }
+  &::placeholder { color: #9ca3af; }
+  &:focus { border-color: transparent; box-shadow: 0 0 0 2px #86efac; }
 }
 
 @utility card {
@@ -157,9 +108,7 @@
   padding: 1.5rem;
   transition: box-shadow 0.3s ease;
 
-  &:hover {
-    box-shadow: var(--shadow-card-hover);
-  }
+  &:hover { box-shadow: var(--shadow-card-hover); }
 }
 
 @utility status-badge {
