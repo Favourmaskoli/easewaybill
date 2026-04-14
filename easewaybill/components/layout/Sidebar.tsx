@@ -1,51 +1,41 @@
 // components/layout/Sidebar.tsx
 // ================================================================
-// SIDEBAR NAVIGATION COMPONENT
+// SIDEBAR — Deep Olive Claymorphism
 // ================================================================
-// The main desktop navigation panel. On tablet (<lg) it works as
-// a slide-in drawer controlled by the `isOpen` / `onClose` props.
-//
-// Renders:
-//   • Logo header with close button (tablet only)
-//   • Navigation links with active highlighting
-//   • User profile card at the bottom
-//
-// Props:
-//   isOpen    — whether the drawer is visible (mobile/tablet)
-//   onClose   — callback to close the drawer
-//   pathname  — current route path for active state
+// The sidebar background uses the darkest olive tones so that
+// the nav items, logo, and user card all read as raised/lit
+// elements against the deep olive base.
 // ================================================================
+
+// components/layout/Sidebar.tsx
+// ================================================================
+// SIDEBAR — Deep Olive Claymorphism
+// ================================================================
+
 
 "use client";
 
 import React from "react";
 import Link from "next/link";
 import { X, ChevronRight } from "lucide-react";
-
-// ── Data imports ──────────────────────────────────────────────
 import { sidebarNavItems, isRouteActive } from "@/lib/navigation";
-
-// ── Sub-component imports ─────────────────────────────────────
 import Logo from "@/components/layout/Logo";
 import UserProfileCard from "@/components/layout/UserProfileCard";
 
 interface SidebarProps {
-  /** Whether the mobile/tablet drawer is open */
   isOpen: boolean;
-  /** Callback to close the drawer overlay */
   onClose: () => void;
-  /** Current route pathname (from usePathname) */
   pathname: string;
 }
 
 export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
   return (
     <>
-      {/* ── Overlay Backdrop ───────────────────────────────── */}
-      {/* Shown only on mobile/tablet when the drawer is open */}
+      {/* ── Backdrop Overlay ───────────────────────────────── */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-20 lg:hidden"
+          className="fixed inset-0 bg-olive-950/40 backdrop-blur-sm
+                     z-20 lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -54,27 +44,25 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
       {/* ── Sidebar Panel ──────────────────────────────────── */}
       <aside
         className={[
-          // Position: fixed on mobile, static (in-flow) on desktop
           "fixed lg:static inset-y-0 left-0 z-30",
-          // Dimensions
           "w-72 flex flex-col",
-          // Styling
-          "bg-white border-r border-cream-300",
-          // Slide animation for mobile drawer
+          "bg-gradient-to-b from-olive-600 via-olive-700 to-olive-800",
+          "border-r border-olive-500/30",
           "transition-transform duration-300 ease-in-out",
-          // Visibility control
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         ].join(" ")}
         aria-label="Sidebar navigation"
       >
         {/* ── Logo Header ────────────────────────────────────── */}
-        <div className="flex items-center justify-between p-5 border-b border-cream-300 shrink-0">
+        <div
+          className="flex items-center justify-between p-5
+                     border-b border-olive-500/25 shrink-0"
+        >
           <Logo />
-
-          {/* Close button — only visible on tablet/mobile */}
           <button
-            className="lg:hidden p-2 text-gray-400 hover:text-olive-600
-                       hover:bg-olive-50 rounded-xl transition-colors"
+            className="lg:hidden p-2 rounded-xl transition-all duration-200
+                       text-cream-200 hover:text-cream-50
+                       hover:bg-olive-500/40"
             onClick={onClose}
             aria-label="Close navigation"
           >
@@ -84,40 +72,43 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
 
         {/* ── Navigation Links ───────────────────────────────── */}
         <nav
-          className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide"
+          className="flex-1 p-4 space-y-1.5 overflow-y-auto scrollbar-hide"
           aria-label="Main navigation"
         >
           {sidebarNavItems.map((item) => {
             const active = isRouteActive(item.href, pathname);
-
             return (
               <Link
                 key={item.label}
                 href={item.href}
-                // Close drawer on navigate (mobile)
                 onClick={onClose}
-                className={[
-                  "flex items-center gap-3 px-4 py-3 rounded-xl",
-                  "font-medium text-sm transition-all duration-200",
-                  active
-                    ? // Active: olive background, white text
-                      "bg-olive-600 text-white shadow-olive-md"
-                    : // Default: subtle hover
-                      "text-gray-600 hover:bg-olive-50 hover:text-olive-700",
-                ].join(" ")}
                 aria-current={active ? "page" : undefined}
+                className={[
+                  // Shared base styles
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl",
+                  "font-semibold text-sm transition-all duration-200",
+                  active
+                    ? // Active — raised cream-tinted pill
+                      "bg-cream-100 text-olive-800 shadow-[var(--shadow-clay-md)]"
+                    : // Inactive — cream text, subtle hover
+                      "text-cream-200 hover:bg-olive-500/40 hover:text-cream-50",
+                ].join(" ")}
               >
                 {/* Icon */}
-                <item.icon size={20} aria-hidden="true" />
+                <item.icon
+                  size={20}
+                  aria-hidden="true"
+                  className={active ? "text-olive-600" : "text-cream-300"}
+                />
 
                 {/* Label */}
-                <span>{item.label}</span>
+                <span className="flex-1">{item.label}</span>
 
-                {/* Active chevron indicator */}
+                {/* Active chevron */}
                 {active && (
                   <ChevronRight
-                    size={16}
-                    className="ml-auto opacity-70"
+                    size={15}
+                    className="text-olive-400"
                     aria-hidden="true"
                   />
                 )}
@@ -126,15 +117,20 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
           })}
         </nav>
 
-        {/* ── User Profile (bottom) ──────────────────────────── */}
+        {/* ── Section hint above user card ───────────────────── */}
+        <div className="px-4 pb-2">
+          <p className="text-[10px] text-olive-300 uppercase tracking-widest
+                        font-semibold px-3">
+            Account
+          </p>
+        </div>
+
+        {/* ── User Profile ───────────────────────────────────── */}
         <UserProfileCard
           name="John Doe"
           email="john@example.com"
           initials="JD"
-          onLogout={() => {
-            // TODO: implement real logout logic
-            console.log("Logout clicked");
-          }}
+          onLogout={() => console.log("Logout")}
         />
       </aside>
     </>

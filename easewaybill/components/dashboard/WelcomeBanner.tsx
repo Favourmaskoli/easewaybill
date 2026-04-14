@@ -28,8 +28,7 @@ export default function WelcomeBanner({
 }: WelcomeBannerProps) {
   return (
     <section
-      className="olive-gradient rounded-2xl p-6 text-white
-                 shadow-olive-lg relative overflow-hidden"
+      className="clay-card-dark relative overflow-hidden"
       aria-label="Welcome banner"
     >
       {/* ── Decorative Background Circles ──────────────────── */}
@@ -45,16 +44,14 @@ export default function WelcomeBanner({
       />
 
       {/* ── Content Row ────────────────────────────────────── */}
-      <div
-        className="flex items-center justify-between gap-4
-                   relative z-10"
-      >
+      <div className="flex items-center justify-between gap-4 relative z-10">
+
         {/* Greeting text */}
         <div>
-          <h2 className="text-2xl font-bold mb-1">
+          <h2 className="text-2xl font-bold text-white mb-1">
             Good evening, {userName}! 👋
           </h2>
-          <p className="text-olive-100 text-sm">
+          <p className="text-olive-200 text-sm">
             You have{" "}
             <strong className="text-white font-semibold">
               {pendingCount} pending action{pendingCount !== 1 ? "s" : ""}
@@ -66,10 +63,9 @@ export default function WelcomeBanner({
         {/* New Order CTA */}
         <Link
           href="/dashboard/orders/create"
-          className="flex items-center gap-2 bg-white text-olive-700
-                     font-semibold px-5 py-2.5 rounded-xl
-                     hover:bg-olive-50 active:scale-95 transition-all
-                     shadow-md whitespace-nowrap shrink-0"
+          className="clay-btn-ghost px-5 py-2.5 whitespace-nowrap shrink-0
+                     !text-white !border-white/20 !bg-white/10
+                     hover:!bg-white/20 gap-2"
         >
           <Plus size={18} aria-hidden="true" />
           New Order

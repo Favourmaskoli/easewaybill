@@ -30,15 +30,14 @@ export default function StatsGrid({ stats }: StatsGridProps) {
         {stats.map((stat) => (
           <article
             key={stat.title}
-            className="bg-white rounded-2xl p-5 shadow-olive-sm
-                       border border-cream-300 card-hover"
+            className="clay-card"
           >
             {/* ── Top Row: Icon + Badge ────────────────────── */}
             <div className="flex items-center justify-between mb-4">
               {/* Stat icon */}
               <div
                 className={`w-12 h-12 ${stat.bgColor} ${stat.textColor}
-                           rounded-xl flex items-center justify-center`}
+                            rounded-xl flex items-center justify-center`}
                 aria-hidden="true"
               >
                 <stat.icon size={24} />
@@ -46,9 +45,8 @@ export default function StatsGrid({ stats }: StatsGridProps) {
 
               {/* Trend badge */}
               <span
-                className="flex items-center gap-1 text-xs font-medium
-                           text-olive-600 bg-olive-50 px-2.5 py-1
-                           rounded-full"
+                className="clay-badge bg-olive-100 text-olive-600
+                           flex items-center gap-1"
               >
                 <TrendingUp size={11} aria-hidden="true" />
                 Active
@@ -61,12 +59,12 @@ export default function StatsGrid({ stats }: StatsGridProps) {
             </p>
 
             {/* ── Title ────────────────────────────────────── */}
-            <p className="text-sm font-medium text-gray-500 mb-0.5">
+            <p className="text-sm font-medium text-olive-600 mb-0.5">
               {stat.title}
             </p>
 
             {/* ── Change Description ───────────────────────── */}
-            <p className="text-xs text-gray-400">{stat.change}</p>
+            <p className="text-xs text-olive-400">{stat.change}</p>
           </article>
         ))}
       </div>

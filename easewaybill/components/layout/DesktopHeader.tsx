@@ -1,16 +1,105 @@
+// // components/layout/DesktopHeader.tsx
+// // ================================================================
+// // DESKTOP TOP HEADER BAR
+// // ================================================================
+// // Sticky bar at the top of the main content area on desktop (lg+).
+// // Contains: page title, search input, notification bell, user avatar.
+// //
+// // Hidden on mobile — mobile pages use their own headers
+// // (MobilePageHeader or custom greeting sections).
+// //
+// // Props:
+// //   title    — current page title
+// //   subtitle — optional subtitle text
+// // ================================================================
+
+// "use client";
+
+// import React from "react";
+// import { Search, Bell } from "lucide-react";
+// import Avatar from "@/components/ui/Avatar";
+
+// interface DesktopHeaderProps {
+//   /** Page title displayed on the left */
+//   title: string;
+//   /** Optional subtitle below the title */
+//   subtitle?: string;
+// }
+
+// export default function DesktopHeader({
+//   title,
+//   subtitle,
+// }: DesktopHeaderProps) {
+//   return (
+//     <header
+//       className="hidden lg:flex items-center justify-between
+//                  bg-white/80 backdrop-blur-md border-b border-cream-300
+//                  px-6 py-4 shrink-0 sticky top-0 z-10"
+//     >
+//       {/* ── Left: Page Title ───────────────────────────────── */}
+//       <div className="flex items-center gap-4 min-w-0">
+//         <div>
+//           <h1 className="text-xl font-bold text-olive-900 leading-tight">
+//             {title}
+//           </h1>
+//           {subtitle && (
+//             <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* ── Right: Search + Bell + Avatar ──────────────────── */}
+//       <div className="flex items-center gap-3">
+//         {/* Search Input */}
+//         <div
+//           className="flex items-center gap-2 bg-cream-100 border border-cream-300
+//                      rounded-xl px-3.5 py-2.5 w-56
+//                      focus-within:border-olive-400 focus-within:ring-2
+//                      focus-within:ring-olive-100 transition-all"
+//         >
+//           <Search
+//             size={15}
+//             className="text-gray-400 shrink-0"
+//             aria-hidden="true"
+//           />
+//           <input
+//             type="search"
+//             placeholder="Search..."
+//             className="bg-transparent text-sm text-gray-600 outline-none
+//                        placeholder:text-gray-400 w-full"
+//             aria-label="Search"
+//           />
+//         </div>
+
+//         {/* Notification Bell */}
+//         <button
+//           className="relative p-2.5 text-gray-500 hover:text-olive-600
+//                      hover:bg-olive-50 rounded-xl transition-colors"
+//           aria-label="View notifications"
+//         >
+//           <Bell size={20} />
+//           {/* Unread indicator dot */}
+//           <span
+//             className="absolute top-2 right-2 w-2 h-2 bg-red-500
+//                        rounded-full ring-2 ring-white"
+//           />
+//         </button>
+
+//         {/* User Avatar */}
+//         <Avatar
+//           initials="JD"
+//           size="md"
+//           className="cursor-pointer hover:ring-2 hover:ring-olive-300
+//                      transition-all"
+//         />
+//       </div>
+//     </header>
+//   );
+// }
+
 // components/layout/DesktopHeader.tsx
 // ================================================================
-// DESKTOP TOP HEADER BAR
-// ================================================================
-// Sticky bar at the top of the main content area on desktop (lg+).
-// Contains: page title, search input, notification bell, user avatar.
-//
-// Hidden on mobile — mobile pages use their own headers
-// (MobilePageHeader or custom greeting sections).
-//
-// Props:
-//   title    — current page title
-//   subtitle — optional subtitle text
+// DESKTOP HEADER — olive-clay raised bar
 // ================================================================
 
 "use client";
@@ -20,9 +109,7 @@ import { Search, Bell } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 
 interface DesktopHeaderProps {
-  /** Page title displayed on the left */
   title: string;
-  /** Optional subtitle below the title */
   subtitle?: string;
 }
 
@@ -33,64 +120,67 @@ export default function DesktopHeader({
   return (
     <header
       className="hidden lg:flex items-center justify-between
-                 bg-white/80 backdrop-blur-md border-b border-cream-300
-                 px-6 py-4 shrink-0 sticky top-0 z-10"
+                 px-6 py-4 shrink-0 sticky top-0 z-10
+                 border-b border-cream-300/60"
+      style={{
+        background:
+          "linear-gradient(145deg, var(--color-cream-100), var(--color-cream-200))",
+        boxShadow:
+          "0 4px 14px rgba(42,53,18,0.08), 0 1px 3px rgba(42,53,18,0.06)",
+      }}
     >
-      {/* ── Left: Page Title ───────────────────────────────── */}
-      <div className="flex items-center gap-4 min-w-0">
-        <div>
-          <h1 className="text-xl font-bold text-olive-900 leading-tight">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
-          )}
-        </div>
+      {/* ── Page Title ───────────────────────────────────── */}
+      <div>
+        <h1 className="text-xl font-bold text-olive-900 leading-tight">
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="text-xs text-olive-500 mt-0.5">{subtitle}</p>
+        )}
       </div>
 
-      {/* ── Right: Search + Bell + Avatar ──────────────────── */}
+      {/* ── Controls ─────────────────────────────────────── */}
       <div className="flex items-center gap-3">
-        {/* Search Input */}
+        {/* Search — clay inset */}
         <div
-          className="flex items-center gap-2 bg-cream-100 border border-cream-300
-                     rounded-xl px-3.5 py-2.5 w-56
-                     focus-within:border-olive-400 focus-within:ring-2
-                     focus-within:ring-olive-100 transition-all"
+          className="clay-inset flex items-center gap-2
+                     px-3.5 py-2.5 w-56"
         >
           <Search
             size={15}
-            className="text-gray-400 shrink-0"
+            className="text-olive-400 shrink-0"
             aria-hidden="true"
           />
           <input
             type="search"
             placeholder="Search..."
-            className="bg-transparent text-sm text-gray-600 outline-none
-                       placeholder:text-gray-400 w-full"
+            className="bg-transparent text-sm text-olive-800
+                       outline-none placeholder:text-olive-400 w-full"
             aria-label="Search"
           />
         </div>
 
-        {/* Notification Bell */}
+        {/* Bell — clay raised */}
         <button
-          className="relative p-2.5 text-gray-500 hover:text-olive-600
-                     hover:bg-olive-50 rounded-xl transition-colors"
-          aria-label="View notifications"
+          className="relative p-2.5 text-olive-600
+                     hover:text-olive-800 rounded-xl transition-all
+                     clay-inset"
+          aria-label="Notifications"
         >
           <Bell size={20} />
-          {/* Unread indicator dot */}
           <span
-            className="absolute top-2 right-2 w-2 h-2 bg-red-500
-                       rounded-full ring-2 ring-white"
+            className="absolute top-1.5 right-1.5 w-2 h-2
+                       bg-red-500 rounded-full
+                       ring-2 ring-cream-200"
           />
         </button>
 
-        {/* User Avatar */}
+        {/* Avatar */}
         <Avatar
           initials="JD"
           size="md"
-          className="cursor-pointer hover:ring-2 hover:ring-olive-300
-                     transition-all"
+          className="cursor-pointer hover:ring-2
+                     hover:ring-olive-400 transition-all"
         />
       </div>
     </header>

@@ -27,23 +27,20 @@ export default function BalanceCard({
   onWithdraw,
 }: BalanceCardProps) {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-olive-sm border border-cream-300">
+    <div className="clay-card-dark">
       {/* ── Label Row ──────────────────────────────────────── */}
       <div className="flex items-center gap-2 mb-2">
-        <Wallet size={16} className="text-gray-400" aria-hidden="true" />
-        <p className="text-sm text-gray-500 font-medium">Total balance</p>
+        <Wallet size={16} className="text-olive-200" aria-hidden="true" />
+        <p className="text-sm text-olive-200 font-medium">Total balance</p>
       </div>
 
       {/* ── Balance Amount ─────────────────────────────────── */}
-      <p className="text-3xl font-bold text-olive-900 mb-4">{balance}</p>
+      <p className="text-3xl font-bold text-white mb-4">{balance}</p>
 
       {/* ── Withdraw Button ────────────────────────────────── */}
       <button
         onClick={onWithdraw}
-        className="w-full bg-olive-600 hover:bg-olive-700
-                   active:bg-olive-800 text-white font-semibold
-                   py-3 rounded-xl transition-colors shadow-olive-sm
-                   active:scale-[0.98]"
+        className="clay-btn w-full py-3"
       >
         Withdraw
       </button>

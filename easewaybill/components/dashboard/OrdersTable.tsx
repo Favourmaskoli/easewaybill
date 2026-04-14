@@ -36,12 +36,12 @@ interface OrdersTableProps {
 
 /** Column definitions for the table */
 const columns = [
-  { key: "id", label: "Order ID" },
-  { key: "item", label: "Item" },
-  { key: "buyer", label: "Buyer" },
-  { key: "amount", label: "Amount" },
-  { key: "status", label: "Status" },
-  { key: "date", label: "Date" },
+  { key: "id",     label: "Order ID" },
+  { key: "item",   label: "Item"     },
+  { key: "buyer",  label: "Buyer"    },
+  { key: "amount", label: "Amount"   },
+  { key: "status", label: "Status"   },
+  { key: "date",   label: "Date"     },
 ] as const;
 
 export default function OrdersTable({
@@ -53,13 +53,19 @@ export default function OrdersTable({
 }: OrdersTableProps) {
   return (
     <section
-      className="bg-white rounded-2xl shadow-olive-sm
-                 border border-cream-300 overflow-hidden"
+      className="clay-card !p-0 overflow-hidden"
       aria-label={title}
     >
       {/* ── Section Header ─────────────────────────────────── */}
       {showHeader && (
-        <div className="px-5 py-4 border-b border-cream-300">
+        <div
+          className="px-5 py-4 border-b border-cream-300/50"
+          style={{
+            background:
+              "linear-gradient(145deg, var(--color-olive-50)," +
+              " var(--color-cream-200))",
+          }}
+        >
           <SectionHeader
             title={title}
             subtitle={subtitle}
@@ -72,30 +78,40 @@ export default function OrdersTable({
       {/* ── Table ──────────────────────────────────────────── */}
       <div className="overflow-x-auto">
         <table className="w-full">
+
           {/* Table head */}
           <thead>
-            <tr className="bg-cream-100/60">
+            <tr
+              style={{
+                background:
+                  "linear-gradient(145deg, var(--color-cream-100)," +
+                  " var(--color-cream-200))",
+              }}
+            >
               {columns.map((col) => (
                 <th
                   key={col.key}
                   scope="col"
-                  className="text-left text-xs font-semibold text-gray-500
-                             uppercase tracking-wide px-5 py-3"
+                  className="text-left text-[11px] font-bold text-olive-500
+                             uppercase tracking-wider px-5 py-3.5"
                 >
                   {col.label}
                 </th>
               ))}
-              {/* Action column (empty header) */}
-              <th scope="col" className="px-5 py-3 w-10" />
+              {/* Action column — empty header */}
+              <th scope="col" className="px-5 py-3.5 w-10" />
             </tr>
           </thead>
 
           {/* Table body */}
-          <tbody className="divide-y divide-cream-200">
+          <tbody className="divide-y divide-cream-300/50">
             {orders.map((order) => (
               <tr
                 key={order.id}
-                className="hover:bg-olive-50/40 transition-colors"
+                className="transition-all duration-200 cursor-pointer
+                border-l-2 border-l-transparent
+                hover:border-l-olive-500
+                hover:bg-olive-100/60"
               >
                 {/* Order ID */}
                 <td className="px-5 py-4">
@@ -116,7 +132,7 @@ export default function OrdersTable({
 
                 {/* Buyer */}
                 <td className="px-5 py-4">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-olive-600">
                     {order.buyer}
                   </span>
                 </td>
@@ -138,7 +154,7 @@ export default function OrdersTable({
 
                 {/* Date */}
                 <td className="px-5 py-4">
-                  <time className="text-xs text-gray-400">
+                  <time className="text-xs text-olive-400">
                     {order.date}
                   </time>
                 </td>
@@ -147,8 +163,8 @@ export default function OrdersTable({
                 <td className="px-5 py-4">
                   <Link
                     href={`/dashboard/orders/${order.id}`}
-                    className="p-1.5 text-gray-400 hover:text-olive-600
-                               hover:bg-olive-100 rounded-lg
+                    className="clay-inset p-1.5 text-olive-500
+                               hover:text-olive-800 rounded-xl
                                transition-colors inline-flex"
                     aria-label={`View order ${order.id}`}
                   >
@@ -163,7 +179,7 @@ export default function OrdersTable({
         {/* ── Empty State ──────────────────────────────────── */}
         {orders.length === 0 && (
           <div className="py-12 text-center">
-            <p className="text-sm text-gray-400">No orders found</p>
+            <p className="text-sm text-olive-400">No orders found</p>
           </div>
         )}
       </div>

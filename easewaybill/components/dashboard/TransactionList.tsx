@@ -41,16 +41,12 @@ export default function TransactionList({
         <Link
           key={order.id}
           href={`/dashboard/orders/${order.id}`}
-          className="flex items-center gap-3 bg-white p-4 rounded-xl
-                     shadow-olive-sm border border-cream-300
-                     hover:bg-olive-50/50 active:scale-[0.99]
-                     transition-all"
+          className="clay-card flex items-center gap-3 !p-4
+                     active:scale-[0.99] transition-all"
         >
           {/* ── Product Thumbnail Placeholder ───────────────── */}
-          <div
-            className="w-11 h-11 bg-cream-200 rounded-xl
-                       flex items-center justify-center shrink-0"
-          >
+          <div className="clay-inset w-11 h-11 flex items-center
+                          justify-center shrink-0 !rounded-xl">
             <Package
               size={18}
               className="text-olive-500"
@@ -63,7 +59,7 @@ export default function TransactionList({
             <p className="text-sm font-semibold text-olive-900 truncate">
               {order.item}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">{order.date}</p>
+            <p className="text-xs text-olive-400 mt-0.5">{order.date}</p>
           </div>
 
           {/* ── Status Badge ───────────────────────────────── */}
@@ -77,12 +73,9 @@ export default function TransactionList({
 
       {/* ── Empty State ────────────────────────────────────── */}
       {visibleOrders.length === 0 && (
-        <div
-          className="bg-white rounded-2xl p-8 text-center
-                     shadow-olive-sm border border-cream-300"
-        >
-          <Package size={40} className="text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">No transactions yet</p>
+        <div className="clay-card p-8 text-center">
+          <Package size={40} className="text-olive-300 mx-auto mb-3" />
+          <p className="text-sm text-olive-400">No transactions yet</p>
         </div>
       )}
     </div>

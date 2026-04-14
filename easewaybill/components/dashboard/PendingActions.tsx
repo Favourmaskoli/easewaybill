@@ -12,41 +12,25 @@
 //   actions — array of PendingAction objects from mock-data
 // ================================================================
 
+// components/dashboard/PendingActions.tsx
+"use client";
+
 import React from "react";
 import { AlertTriangle } from "lucide-react";
 import type { PendingAction } from "@/lib/mock-data";
 
 interface PendingActionsProps {
-  /** Array of pending action items */
   actions: PendingAction[];
 }
 
 export default function PendingActions({ actions }: PendingActionsProps) {
   return (
-    <section
-      className="bg-white rounded-2xl shadow-olive-sm
-                 border border-cream-300 p-5"
-      aria-label="Pending actions"
-    >
+    <section className="clay-card" aria-label="Pending actions">
       {/* ── Section Heading with Badge ─────────────────────── */}
       <div className="flex items-center gap-2 mb-5">
-        {/* Warning icon */}
-        <AlertTriangle
-          size={20}
-          className="text-amber-500"
-          aria-hidden="true"
-        />
-
-        {/* Title */}
-        <h3 className="font-bold text-olive-900 text-lg">
-          Pending Actions
-        </h3>
-
-        {/* Count badge */}
-        <span
-          className="bg-amber-100 text-amber-600 text-xs font-bold
-                     px-2.5 py-0.5 rounded-full"
-        >
+        <AlertTriangle size={20} className="text-amber-500" aria-hidden="true" />
+        <h3 className="font-bold text-olive-900 text-lg">Pending Actions</h3>
+        <span className="clay-badge bg-amber-100 text-amber-700">
           {actions.length} item{actions.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -61,7 +45,7 @@ export default function PendingActions({ actions }: PendingActionsProps) {
       {/* ── Empty State ────────────────────────────────────── */}
       {actions.length === 0 && (
         <div className="py-8 text-center">
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-olive-400">
             No pending actions — you&apos;re all caught up! 🎉
           </p>
         </div>
@@ -70,22 +54,11 @@ export default function PendingActions({ actions }: PendingActionsProps) {
   );
 }
 
-// ================================================================
-// SUB-COMPONENT: Single Pending Action Card
-// ================================================================
-// Extracted to keep the parent component clean. Not exported —
-// only used internally by PendingActions.
-// ================================================================
-
-interface PendingActionCardProps {
-  action: PendingAction;
-}
-
-function PendingActionCard({ action }: PendingActionCardProps) {
+function PendingActionCard({ action }: { action: PendingAction }) {
   return (
     <div
-      className={`flex items-start gap-3 p-4 rounded-xl border
-                 ${action.bg} ${action.border} card-hover`}
+      className={`clay-card flex items-start gap-3 !p-4
+                  ${action.bg} ${action.border}`}
     >
       {/* ── Action Icon ────────────────────────────────────── */}
       <action.icon
@@ -96,20 +69,13 @@ function PendingActionCard({ action }: PendingActionCardProps) {
 
       {/* ── Text + Button ──────────────────────────────────── */}
       <div>
-        {/* Title */}
-        <p className="text-sm font-semibold text-olive-800">
-          {action.title}
-        </p>
-
-        {/* Description */}
-        <p className="text-xs text-gray-500 mt-0.5">
-          {action.description}
-        </p>
-
-        {/* Action button */}
+        <p className="text-sm font-semibold text-olive-800">{action.title}</p>
+        <p className="text-xs text-olive-500 mt-0.5">{action.description}</p>
         <button
           className={`mt-2.5 text-xs font-semibold px-3 py-1
-                     rounded-full transition-colors ${action.btnClass}`}
+                      rounded-full transition-all duration-200
+                      hover:scale-105 hover:shadow-md
+                      ${action.btnClass}`}
         >
           {action.actionLabel}
         </button>

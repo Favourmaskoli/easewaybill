@@ -11,24 +11,20 @@
 //   statusBars — array of StatusBar objects from mock-data
 // ================================================================
 
+// components/dashboard/OrderStatusCard.tsx
+"use client";
+
 import React from "react";
 import ProgressBar from "@/components/ui/ProgressBar";
 import type { StatusBar } from "@/lib/mock-data";
 
 interface OrderStatusCardProps {
-  /** Array of status bar data to render */
   statusBars: StatusBar[];
 }
 
-export default function OrderStatusCard({
-  statusBars,
-}: OrderStatusCardProps) {
+export default function OrderStatusCard({ statusBars }: OrderStatusCardProps) {
   return (
-    <section
-      className="bg-white rounded-2xl shadow-olive-sm
-                 border border-cream-300 p-5"
-      aria-label="Order status summary"
-    >
+    <section className="clay-card" aria-label="Order status summary">
       {/* ── Card Title ─────────────────────────────────────── */}
       <h3 className="font-bold text-olive-900 text-lg mb-4">
         Order Status

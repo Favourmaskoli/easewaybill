@@ -1,6 +1,7 @@
 /* app/globals.css */
 /* ================================================================
-   Tailwind CSS v4 — Olive Green Theme for EaseWaybill
+   Tailwind CSS v4 — Deep Olive Claymorphism Theme
+   EaseWaybill Design System
    ================================================================ */
 
 /* ============================================================
@@ -10,53 +11,95 @@
 @import "tailwindcss";
 
 /* ============================================================
-   STEP 2: @theme block
-   Defines ALL design tokens: colours, fonts, shadows.
-   Tailwind auto-generates utility classes from these.
-   e.g. --color-olive-600 → bg-olive-600, text-olive-600, etc.
+   STEP 2: @theme — Design Tokens
    ============================================================ */
 @theme {
   /* ── Olive Green Scale ─────────────────────────────────── */
-  --color-olive-50: #f4f6ee;
-  --color-olive-100: #e5ebd5;
-  --color-olive-200: #cdd8af;
-  --color-olive-300: #afc080;
-  --color-olive-400: #93a85a;
-  --color-olive-500: #768d3e;
-  --color-olive-600: #5c6f2e;
-  --color-olive-700: #475628;
-  --color-olive-800: #3b4624;
-  --color-olive-900: #333c21;
-  --color-olive-950: #1a200f;
+  --color-olive-50:  #f2f4e8;
+  --color-olive-100: #e2e8cc;
+  --color-olive-200: #c8d4a0;
+  --color-olive-300: #aabf72;
+  --color-olive-400: #8fa84d;
+  --color-olive-500: #728f32;
+  --color-olive-600: #5a7228;
+  --color-olive-700: #445820;
+  --color-olive-800: #364518;
+  --color-olive-900: #2a3512;
+  --color-olive-950: #171d09;
 
-  /* ── Warm Cream Neutrals ───────────────────────────────── */
-  --color-cream-50: #fdfcf9;
-  --color-cream-100: #faf9f5;
-  --color-cream-200: #f5f3eb;
-  --color-cream-300: #ede9dd;
-  --color-cream-400: #ddd8c9;
-  --color-cream-500: #c4bca8;
+  /* ── Warm Cream — Olive-tinted backgrounds ─────────────── */
+  --color-cream-50:  #fafaf4;
+  --color-cream-100: #f4f4ea;
+  --color-cream-200: #eceee0;
+  --color-cream-300: #dfe2d0;
+  --color-cream-400: #ced3b8;
+  --color-cream-500: #b8be9e;
 
-  /* ── Legacy brand colours (kept for backward compat) ───── */
-  --color-brand-blue: #1a73e8;
-  --color-brand-seablue: #0ea5e9;
-  --color-brand-lightblue: #e0f2fe;
-  --color-brand-darkblue: #1e3a5f;
+  /* ── Status Colours ────────────────────────────────────── */
+  --color-status-pending-bg:   #fef9e7;
+  --color-status-pending-text: #92610a;
+  --color-status-paid-bg:      #eef4e0;
+  --color-status-paid-text:    #3d5e1a;
+  --color-status-transit-bg:   #fdf2e0;
+  --color-status-transit-text: #8a4f10;
+  --color-status-done-bg:      #e8f0da;
+  --color-status-done-text:    #3a5918;
+  --color-status-dispute-bg:   #fce8e8;
+  --color-status-dispute-text: #8b1a1a;
 
-  /* ── Font Family ───────────────────────────────────────── */
+  /* ── Font ───────────────────────────────────────────────── */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  /* ── Custom Shadows ────────────────────────────────────── */
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-  --shadow-card-hover: 0 4px 12px 0 rgb(92 111 46 / 0.1);
-  --shadow-olive-sm: 0 1px 3px 0 rgb(92 111 46 / 0.08);
-  --shadow-olive-md: 0 4px 12px 0 rgb(92 111 46 / 0.1);
-  --shadow-olive-lg: 0 10px 30px 0 rgb(92 111 46 / 0.12);
-  --shadow-bottom-nav: 0 -2px 12px 0 rgb(0 0 0 / 0.06);
+  /* ── Shadow Tokens ──────────────────────────────────────── */
+  --shadow-clay-sm:
+    4px 4px 8px rgba(42, 53, 18, 0.18),
+    -2px -2px 6px rgba(162, 191, 114, 0.18);
+
+  --shadow-clay-md:
+    6px 6px 14px rgba(42, 53, 18, 0.20),
+    -3px -3px 10px rgba(162, 191, 114, 0.20);
+
+  --shadow-clay-lg:
+    12px 12px 28px rgba(42, 53, 18, 0.32),
+    -6px -6px 18px rgba(162, 191, 114, 0.30);
+
+  --shadow-clay-xl:
+    16px 16px 36px rgba(42, 53, 18, 0.38),
+    -8px -8px 22px rgba(162, 191, 114, 0.34);
+
+  /* Inset clay */
+  --shadow-clay-inset:
+    inset 3px 3px 7px rgba(42, 53, 18, 0.16),
+    inset -2px -2px 5px rgba(162, 191, 114, 0.14);
+
+  --shadow-clay-inset-focus:
+    inset 3px 3px 7px rgba(42, 53, 18, 0.18),
+    inset -2px -2px 5px rgba(162, 191, 114, 0.16),
+    0 0 0 3px rgba(90, 114, 40, 0.28);
+
+  /* Bottom nav lift */
+  --shadow-bottom-nav:
+    0 -4px 20px rgba(42, 53, 18, 0.12),
+    0 -1px 4px rgba(42, 53, 18, 0.08);
+
+  /* Button glow */
+  --shadow-btn-olive:
+    6px 6px 14px rgba(42, 53, 18, 0.28),
+    -2px -2px 8px rgba(114, 143, 50, 0.22),
+    inset 0 1px 2px rgba(255, 255, 255, 0.12);
+
+  --shadow-btn-olive-hover:
+    10px 10px 22px rgba(42, 53, 18, 0.38),
+    -4px -4px 12px rgba(114, 143, 50, 0.32),
+    inset 0 1px 3px rgba(255, 255, 255, 0.18);
+
+  --shadow-btn-olive-active:
+    inset 4px 4px 8px rgba(23, 29, 9, 0.30),
+    inset -2px -2px 5px rgba(90, 114, 40, 0.15);
 }
 
 /* ============================================================
-   STEP 3: Base styles
+   STEP 3: Base Styles
    ============================================================ */
 @layer base {
   html {
@@ -67,38 +110,21 @@
   body {
     font-family: var(--font-sans);
     background-color: var(--color-cream-200);
-    color: #374151;
+    color: var(--color-olive-900);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Selection colour uses olive tint */
   ::selection {
-    background-color: rgba(92, 111, 46, 0.15);
+    background-color: rgba(90, 114, 40, 0.22);
     color: var(--color-olive-950);
   }
 
-  /* Scrollbar styling — olive accent */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
+  ::-webkit-scrollbar        { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { background: var(--color-cream-300); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb  { background: var(--color-olive-400); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-olive-600); }
 
-  ::-webkit-scrollbar-track {
-    background: var(--color-cream-200);
-    border-radius: 10px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-olive-400);
-    border-radius: 10px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-olive-500);
-  }
-
-  /* Focus-visible ring uses olive */
   :focus-visible {
     outline: 2px solid var(--color-olive-500);
     outline-offset: 2px;
@@ -106,143 +132,331 @@
 }
 
 /* ============================================================
-   STEP 4: Custom @utility directives (Tailwind v4 syntax)
+   STEP 4: Claymorphism @utility Definitions
    ============================================================ */
 
-/* ── Primary button — olive gradient ────────────────────── */
-@utility btn-primary {
+@utility clay-card {
+  background: linear-gradient(
+    145deg,
+    var(--color-cream-100) 0%,
+    var(--color-cream-200) 60%,
+    var(--color-cream-300) 100%
+  );
+  border-radius: 1.25rem;
+  border: 1px solid rgba(162, 191, 114, 0.25);
+  box-shadow: var(--shadow-clay-md);
+  padding: 1.25rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-clay-xl);
+    transform: translateY(-3px);
+    border-color: rgba(162, 191, 114, 0.50);
+  }
+}
+
+@utility clay-card-dark {
+  background: linear-gradient(
+    145deg,
+    var(--color-olive-600) 0%,
+    var(--color-olive-700) 50%,
+    var(--color-olive-800) 100%
+  );
+  border-radius: 1.25rem;
+  border: 1px solid rgba(162, 191, 114, 0.15);
+  box-shadow:
+    8px 8px 20px rgba(23, 29, 9, 0.35),
+    -4px -4px 12px rgba(114, 143, 50, 0.18),
+    inset 0 1px 2px rgba(255, 255, 255, 0.08);
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow:
+      14px 14px 32px rgba(23, 29, 9, 0.45),
+      -6px -6px 18px rgba(114, 143, 50, 0.30),
+      inset 0 1px 3px rgba(255, 255, 255, 0.12);
+    transform: translateY(-3px);
+  }
+}
+
+@utility clay-inset {
+  background: linear-gradient(
+    145deg,
+    var(--color-cream-300) 0%,
+    var(--color-cream-200) 100%
+  );
+  border-radius: 0.875rem;
+  border: 1px solid rgba(162, 191, 114, 0.20);
+  box-shadow: var(--shadow-clay-inset);
+}
+
+@utility clay-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-olive-600);
+  background: linear-gradient(
+    145deg,
+    var(--color-olive-500) 0%,
+    var(--color-olive-700) 100%
+  );
   color: #ffffff;
-  padding-inline: 1.5rem;
-  padding-block: 0.75rem;
-  border-radius: 0.75rem;
   font-weight: 600;
   font-size: 0.875rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgb(92 111 46 / 0.3);
-  cursor: pointer;
   border: none;
+  border-radius: 0.875rem;
+  cursor: pointer;
   text-decoration: none;
+  letter-spacing: 0.01em;
+  box-shadow: var(--shadow-btn-olive);
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: var(--color-olive-700);
-    box-shadow: 0 10px 15px -3px rgb(92 111 46 / 0.3);
+    background: linear-gradient(
+      145deg,
+      var(--color-olive-500) 0%,
+      var(--color-olive-700) 100%
+    );
+    box-shadow: var(--shadow-btn-olive-hover);
+    transform: translateY(-2px) scale(1.01);
   }
 
   &:active {
-    transform: scale(0.97);
+    box-shadow: var(--shadow-btn-olive-active);
+    transform: translateY(0) scale(0.99);
   }
 
   &:disabled {
-    opacity: 0.7;
+    opacity: 0.55;
     cursor: not-allowed;
+    transform: none;
   }
 }
 
-/* ── Outline button — olive border ──────────────────────── */
-@utility btn-outline {
+@utility clay-btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-olive-600);
-  color: var(--color-olive-600);
-  background-color: transparent;
-  padding-inline: 1.5rem;
-  padding-block: calc(0.75rem - 2px);
-  border-radius: 0.75rem;
+  background: linear-gradient(
+    145deg,
+    var(--color-cream-100),
+    var(--color-cream-300)
+  );
+  color: var(--color-olive-700);
   font-weight: 600;
   font-size: 0.875rem;
-  transition: all 0.2s ease;
+  border: 1.5px solid rgba(90, 114, 40, 0.35);
+  border-radius: 0.875rem;
   cursor: pointer;
   text-decoration: none;
+  box-shadow: var(--shadow-clay-sm);
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: var(--color-olive-50);
+    background: linear-gradient(
+      145deg,
+      var(--color-olive-50),
+      var(--color-cream-200)
+    );
+    border-color: var(--color-olive-500);
+    box-shadow: var(--shadow-clay-lg);
+    transform: translateY(-2px) scale(1.01);
+    color: var(--color-olive-800);
   }
 
   &:active {
-    transform: scale(0.97);
+    box-shadow: var(--shadow-clay-inset);
+    transform: translateY(0) scale(0.99);
   }
 }
 
-/* ── Input field ────────────────────────────────────────── */
-@utility input-field {
+@utility clay-input {
   width: 100%;
   padding-inline: 1rem;
-  padding-block: 0.75rem;
-  border: 1px solid var(--color-cream-300);
+  padding-block: 0.8rem;
   border-radius: 0.75rem;
   font-size: 0.875rem;
-  color: #374151;
-  background-color: #ffffff;
-  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+  color: var(--color-olive-900);
+  background: linear-gradient(
+    145deg,
+    var(--color-cream-300) 0%,
+    var(--color-cream-200) 100%
+  );
+  border: 1px solid rgba(162, 191, 114, 0.25);
+  box-shadow: var(--shadow-clay-inset);
   outline: none;
+  transition: all 0.2s ease;
 
   &::placeholder {
-    color: #9ca3af;
+    color: var(--color-cream-500);
   }
 
   &:focus {
-    border-color: var(--color-olive-400);
-    box-shadow: 0 0 0 3px rgba(92, 111, 46, 0.1);
+    border-color: var(--color-olive-500);
+    box-shadow: var(--shadow-clay-inset-focus);
   }
 }
 
-/* ── Card container ─────────────────────────────────────── */
-@utility card {
-  background-color: #ffffff;
-  border-radius: 1rem;
-  border: 1px solid var(--color-cream-300);
-  box-shadow: var(--shadow-olive-sm);
-  padding: 1.25rem;
+@utility clay-textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  color: var(--color-olive-900);
+  background: linear-gradient(
+    145deg,
+    var(--color-cream-300) 0%,
+    var(--color-cream-200) 100%
+  );
+  border: 1px solid rgba(162, 191, 114, 0.25);
+  box-shadow: var(--shadow-clay-inset);
+  outline: none;
+  resize: none;
   transition: all 0.2s ease;
 
-  &:hover {
-    box-shadow: var(--shadow-olive-md);
+  &::placeholder {
+    color: var(--color-cream-500);
+  }
+
+  &:focus {
+    border-color: var(--color-olive-500);
+    box-shadow: var(--shadow-clay-inset-focus);
   }
 }
 
-/* ── Status badge ───────────────────────────────────────── */
+@utility clay-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding-inline: 0.6rem;
+  padding-block: 0.3rem;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+  box-shadow:
+    2px 2px 5px rgba(42, 53, 18, 0.12),
+    -1px -1px 3px rgba(162, 191, 114, 0.16),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+@utility clay-section {
+  background: linear-gradient(
+    135deg,
+    var(--color-olive-50) 0%,
+    var(--color-cream-200) 100%
+  );
+  border-radius: 1rem;
+  border: 1px solid rgba(162, 191, 114, 0.28);
+  padding: 1rem 1.25rem;
+  box-shadow:
+    inset 2px 2px 5px rgba(42, 53, 18, 0.08),
+    inset -1px -1px 4px rgba(162, 191, 114, 0.12);
+}
+
+@utility clay-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.875rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--color-olive-700);
+  transition: all 0.2s ease;
+  text-decoration: none;
+
+  &:hover {
+    background: linear-gradient(
+      145deg,
+      var(--color-olive-100),
+      var(--color-cream-300)
+    );
+    box-shadow: var(--shadow-clay-md);
+    color: var(--color-olive-900);
+    transform: translateX(4px);
+    border-radius: 0.875rem;
+  }
+}
+
+@utility clay-nav-item-active {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.875rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #ffffff;
+  text-decoration: none;
+  background: linear-gradient(
+    145deg,
+    var(--color-olive-500) 0%,
+    var(--color-olive-700) 100%
+  );
+  box-shadow:
+    5px 5px 12px rgba(23, 29, 9, 0.28),
+    -2px -2px 7px rgba(114, 143, 50, 0.20),
+    inset 0 1px 2px rgba(255, 255, 255, 0.10);
+}
+
 @utility status-badge {
   display: inline-flex;
   align-items: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding-inline: 0.625rem;
-  padding-block: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding-inline: 0.6rem;
+  padding-block: 0.28rem;
   border-radius: 9999px;
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
-/* ── Scrollbar hide (keeps scroll, hides bar) ───────────── */
+/* ─── Misc Utilities ───────────────────────────────────────── */
 @utility scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  &::-webkit-scrollbar { display: none; }
 }
 
-/* ── Olive gradient (banners, hero sections) ────────────── */
-@utility olive-gradient {
-  background: linear-gradient(135deg, var(--color-olive-700), var(--color-olive-600), var(--color-olive-500));
-}
-
-/* ── Card hover lift effect ─────────────────────────────── */
-@utility card-hover {
-  transition: all 0.2s ease;
-
-  &:hover {
-    box-shadow: var(--shadow-olive-md);
-    transform: translateY(-2px);
-  }
-}
-
-/* ── Safe bottom padding for notched phones ─────────────── */
 @utility safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  &:hover {
+    box-shadow: var(--shadow-clay-xl);
+    transform: translateY(-3px);
+    border-color: rgba(162, 191, 114, 0.50);
+  }
+}
+
+/* ─── Settings-specific row hover ──────────────────────────── */
+@utility settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-radius: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: linear-gradient(
+      145deg,
+      var(--color-olive-100) 0%,
+      var(--color-cream-300) 100%
+    );
+    box-shadow: var(--shadow-clay-md);
+    border-color: rgba(162, 191, 114, 0.45);
+    transform: translateX(3px);
+  }
+
+  &:active {
+    box-shadow: var(--shadow-clay-inset);
+    transform: translateX(0);
+  }
 }
