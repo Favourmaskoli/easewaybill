@@ -15,7 +15,7 @@
    ============================================================ */
 @theme {
   /* ── Olive Green Scale ─────────────────────────────────── */
-  --color-olive-50:  #f2f4e8;
+  --color-olive-50: #f2f4e8;
   --color-olive-100: #e2e8cc;
   --color-olive-200: #c8d4a0;
   --color-olive-300: #aabf72;
@@ -28,7 +28,7 @@
   --color-olive-950: #171d09;
 
   /* ── Warm Cream — Olive-tinted backgrounds ─────────────── */
-  --color-cream-50:  #fafaf4;
+  --color-cream-50: #fafaf4;
   --color-cream-100: #f4f4ea;
   --color-cream-200: #eceee0;
   --color-cream-300: #dfe2d0;
@@ -36,15 +36,15 @@
   --color-cream-500: #b8be9e;
 
   /* ── Status Colours ────────────────────────────────────── */
-  --color-status-pending-bg:   #fef9e7;
+  --color-status-pending-bg: #fef9e7;
   --color-status-pending-text: #92610a;
-  --color-status-paid-bg:      #eef4e0;
-  --color-status-paid-text:    #3d5e1a;
-  --color-status-transit-bg:   #fdf2e0;
+  --color-status-paid-bg: #eef4e0;
+  --color-status-paid-text: #3d5e1a;
+  --color-status-transit-bg: #fdf2e0;
   --color-status-transit-text: #8a4f10;
-  --color-status-done-bg:      #e8f0da;
-  --color-status-done-text:    #3a5918;
-  --color-status-dispute-bg:   #fce8e8;
+  --color-status-done-bg: #e8f0da;
+  --color-status-done-text: #3a5918;
+  --color-status-dispute-bg: #fce8e8;
   --color-status-dispute-text: #8b1a1a;
 
   /* ── Font ───────────────────────────────────────────────── */
@@ -52,16 +52,14 @@
 
   /* ── Shadow Tokens ──────────────────────────────────────── */
   --shadow-clay-sm:
-    4px 4px 8px rgba(42, 53, 18, 0.18),
-    -2px -2px 6px rgba(162, 191, 114, 0.18);
+    4px 4px 8px rgba(42, 53, 18, 0.18), -2px -2px 6px rgba(162, 191, 114, 0.18);
 
   --shadow-clay-md:
-    6px 6px 14px rgba(42, 53, 18, 0.20),
-    -3px -3px 10px rgba(162, 191, 114, 0.20);
+    6px 6px 14px rgba(42, 53, 18, 0.2), -3px -3px 10px rgba(162, 191, 114, 0.2);
 
   --shadow-clay-lg:
     12px 12px 28px rgba(42, 53, 18, 0.32),
-    -6px -6px 18px rgba(162, 191, 114, 0.30);
+    -6px -6px 18px rgba(162, 191, 114, 0.3);
 
   --shadow-clay-xl:
     16px 16px 36px rgba(42, 53, 18, 0.38),
@@ -79,13 +77,11 @@
 
   /* Bottom nav lift */
   --shadow-bottom-nav:
-    0 -4px 20px rgba(42, 53, 18, 0.12),
-    0 -1px 4px rgba(42, 53, 18, 0.08);
+    0 -4px 20px rgba(42, 53, 18, 0.12), 0 -1px 4px rgba(42, 53, 18, 0.08);
 
   /* Button glow */
   --shadow-btn-olive:
-    6px 6px 14px rgba(42, 53, 18, 0.28),
-    -2px -2px 8px rgba(114, 143, 50, 0.22),
+    6px 6px 14px rgba(42, 53, 18, 0.28), -2px -2px 8px rgba(114, 143, 50, 0.22),
     inset 0 1px 2px rgba(255, 255, 255, 0.12);
 
   --shadow-btn-olive-hover:
@@ -94,7 +90,7 @@
     inset 0 1px 3px rgba(255, 255, 255, 0.18);
 
   --shadow-btn-olive-active:
-    inset 4px 4px 8px rgba(23, 29, 9, 0.30),
+    inset 4px 4px 8px rgba(23, 29, 9, 0.3),
     inset -2px -2px 5px rgba(90, 114, 40, 0.15);
 }
 
@@ -120,10 +116,21 @@
     color: var(--color-olive-950);
   }
 
-  ::-webkit-scrollbar        { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track  { background: var(--color-cream-300); border-radius: 10px; }
-  ::-webkit-scrollbar-thumb  { background: var(--color-olive-400); border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--color-olive-600); }
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-cream-300);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-olive-400);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-olive-600);
+  }
 
   :focus-visible {
     outline: 2px solid var(--color-olive-500);
@@ -146,12 +153,15 @@
   border: 1px solid rgba(162, 191, 114, 0.25);
   box-shadow: var(--shadow-clay-md);
   padding: 1.25rem;
-  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
 
   &:hover {
     box-shadow: var(--shadow-clay-xl);
     transform: translateY(-3px);
-    border-color: rgba(162, 191, 114, 0.50);
+    border-color: rgba(162, 191, 114, 0.5);
   }
 }
 
@@ -169,12 +179,14 @@
     -4px -4px 12px rgba(114, 143, 50, 0.18),
     inset 0 1px 2px rgba(255, 255, 255, 0.08);
   padding: 1.5rem;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 
   &:hover {
     box-shadow:
       14px 14px 32px rgba(23, 29, 9, 0.45),
-      -6px -6px 18px rgba(114, 143, 50, 0.30),
+      -6px -6px 18px rgba(114, 143, 50, 0.3),
       inset 0 1px 3px rgba(255, 255, 255, 0.12);
     transform: translateY(-3px);
   }
@@ -187,7 +199,7 @@
     var(--color-cream-200) 100%
   );
   border-radius: 0.875rem;
-  border: 1px solid rgba(162, 191, 114, 0.20);
+  border: 1px solid rgba(162, 191, 114, 0.2);
   box-shadow: var(--shadow-clay-inset);
 }
 
@@ -397,8 +409,8 @@
   );
   box-shadow:
     5px 5px 12px rgba(23, 29, 9, 0.28),
-    -2px -2px 7px rgba(114, 143, 50, 0.20),
-    inset 0 1px 2px rgba(255, 255, 255, 0.10);
+    -2px -2px 7px rgba(114, 143, 50, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 @utility status-badge {
@@ -417,7 +429,9 @@
 @utility scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @utility safe-bottom {
@@ -425,11 +439,14 @@
 }
 
 @utility card-hover {
-  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
   &:hover {
     box-shadow: var(--shadow-clay-xl);
     transform: translateY(-3px);
-    border-color: rgba(162, 191, 114, 0.50);
+    border-color: rgba(162, 191, 114, 0.5);
   }
 }
 
