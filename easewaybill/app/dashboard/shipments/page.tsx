@@ -1,171 +1,201 @@
-// app/dashboard/shipments/page.tsx
-// ================================================================
-// SHIPMENTS / TRACKING PAGE — Deep Olive Claymorphism
-// ================================================================
-//
-// DESKTOP (lg+):
-//   Header stats row → Active shipments table → Completed list
-//
-// MOBILE (<lg):
-//   Summary pill → Shipment cards with progress bars
-//   Each card shows route, carrier, ETA, and live progress
-// ================================================================
-
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Truck,
   Package,
   MapPin,
   Clock,
   CheckCircle,
-  ChevronRight,
-  Navigation,
-  ArrowRight,
   Search,
-  Filter,
+  ArrowRight,
+  Navigation,
 } from "lucide-react";
-
-// ── Shared components ─────────────────────────────────────────
 import MobilePageHeader from "@/components/layout/MobilePageHeader";
+import { useOrders } from "@/lib/hooks/useOrders";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { formatNaira } from "@/lib/utils/format";
+import type { Order } from "@/lib/types/api.types";
 
-// ================================================================
-// TYPES
-// ================================================================
+// ── Helpers ───────────────────────────────────────────────────
 
 type ShipmentStatus = "In Transit" | "Delivered" | "Processing" | "Pending";
 
-interface Shipment {
-  id: string;
-  orderId: string;
-  item: string;
-  from: string;
-  to: string;
-  status: ShipmentStatus;
-  /** Progress as a percentage 0–100 */
-  progress: number;
-  eta: string;
-  carrier: string;
-  trackingNumber: string;
-  dispatchedDate: string;
+function getShipmentStatus(order: Order): ShipmentStatus {
+  const map: Record<string, ShipmentStatus> = {
+    SHIPPED: "Processing",
+    IN_TRANSIT: "In Transit",
+    DELIVERED: "Delivered",
+    COMPLETED: "Delivered",
+  };
+  return map[order.status] ?? "Pending";
 }
 
-// ================================================================
-// MOCK DATA
-// ================================================================
+function getProgress(order: Order): number {
+  const map: Record<string, number> = {
+    PAID: 5,
+    SHIPPED: 20,
+    IN_TRANSIT: 60,
+    DELIVERED: 90,
+    COMPLETED: 100,
+  };
+  return map[order.status] ?? 0;
+}
 
-const shipments: Shipment[] = [
-  {
-    id: "SHP-001",
-    orderId: "EWB-001",
-    item: "iPhone 15 Pro Max",
-    from: "Lagos",
-    to: "Abuja",
-    status: "In Transit",
-    progress: 65,
-    eta: "Apr 9, 2026",
-    carrier: "GIG Logistics",
-    trackingNumber: "GIG-28556778",
-    dispatchedDate: "Apr 7, 2026",
-  },
-  {
-    id: "SHP-002",
-    orderId: "EWB-003",
-    item: "MacBook Air M2",
-    from: "Lagos",
-    to: "Port Harcourt",
-    status: "Delivered",
-    progress: 100,
-    eta: "Apr 5, 2026",
-    carrier: "DHL Express",
-    trackingNumber: "DHL-99284756",
-    dispatchedDate: "Apr 3, 2026",
-  },
-  {
-    id: "SHP-003",
-    orderId: "EWB-006",
-    item: "AirPods Pro 2",
-    from: "Kano",
-    to: "Lagos",
-    status: "Processing",
-    progress: 15,
-    eta: "Apr 12, 2026",
-    carrier: "FedEx",
-    trackingNumber: "FDX-44718293",
-    dispatchedDate: "Apr 7, 2026",
-  },
-  {
-    id: "SHP-004",
-    orderId: "EWB-007",
-    item: "Sony Camera A7IV",
-    from: "Lagos",
-    to: "Ibadan",
-    status: "In Transit",
-    progress: 40,
-    eta: "Apr 10, 2026",
-    carrier: "Kwik Delivery",
-    trackingNumber: "KWK-66230198",
-    dispatchedDate: "Apr 6, 2026",
-  },
-  {
-    id: "SHP-005",
-    orderId: "EWB-008",
-    item: "Mechanical Keyboard",
-    from: "Abuja",
-    to: "Lagos",
-    status: "Delivered",
-    progress: 100,
-    eta: "Mar 30, 2026",
-    carrier: "GIG Logistics",
-    trackingNumber: "GIG-11203847",
-    dispatchedDate: "Mar 28, 2026",
-  },
-];
-
-// ================================================================
-// HELPERS
-// ================================================================
-
-/**
- * Returns style config for a given shipment status.
- */
 function getStatusConfig(status: ShipmentStatus): {
-  label: string;
   colorClass: string;
   barColor: string;
-  iconColor: string;
 } {
-  switch (status) {
-    case "In Transit":
-      return {
-        label: "In Transit",
+  const map: Record<ShipmentStatus, { colorClass: string; barColor: string }> =
+    {
+      "In Transit": {
         colorClass: "bg-amber-100 text-amber-800",
-        barColor: "from-amber-400 to-amber-600",
-        iconColor: "text-amber-600",
-      };
-    case "Delivered":
-      return {
-        label: "Delivered",
-        colorClass: "bg-olive-100 text-olive-800",
-        barColor: "from-olive-400 to-olive-600",
-        iconColor: "text-olive-600",
-      };
-    case "Processing":
-      return {
-        label: "Processing",
+        barColor: "linear-gradient(90deg, #fbbf24, #d97706)",
+      },
+      Delivered: {
+        colorClass: "bg-green-100 text-green-800",
+        barColor:
+          "linear-gradient(90deg, var(--color-olive-400), var(--color-olive-600))",
+      },
+      Processing: {
         colorClass: "bg-blue-100 text-blue-800",
-        barColor: "from-blue-400 to-blue-600",
-        iconColor: "text-blue-600",
-      };
-    case "Pending":
-      return {
-        label: "Pending",
+        barColor: "linear-gradient(90deg, #60a5fa, #3b82f6)",
+      },
+      Pending: {
         colorClass: "bg-yellow-100 text-yellow-800",
-        barColor: "from-yellow-400 to-yellow-600",
-        iconColor: "text-yellow-600",
-      };
-  }
+        barColor: "linear-gradient(90deg, #fde047, #eab308)",
+      },
+    };
+  return map[status];
+}
+
+// Filter tabs
+const filterTabs = ["All", "Processing", "In Transit", "Delivered"];
+
+const filterMap: Record<string, string[]> = {
+  All: ["SHIPPED", "IN_TRANSIT", "DELIVERED", "COMPLETED"],
+  Processing: ["SHIPPED"],
+  "In Transit": ["IN_TRANSIT"],
+  Delivered: ["DELIVERED", "COMPLETED"],
+};
+
+// ================================================================
+// SUB-COMPONENTS — outside main to prevent remount
+// ================================================================
+
+function ShipmentStatusBadge({ status }: { status: ShipmentStatus }) {
+  const config = getStatusConfig(status);
+  return <span className={`clay-badge ${config.colorClass}`}>{status}</span>;
+}
+
+function ProgressBar({
+  progress,
+  status,
+}: {
+  progress: number;
+  status: ShipmentStatus;
+}) {
+  const config = getStatusConfig(status);
+  return (
+    <div className="clay-inset h-2.5 rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all duration-700"
+        style={{
+          width: `${progress}%`,
+          background: config.barColor,
+        }}
+      />
+    </div>
+  );
+}
+
+function MobileShipmentCard({ order }: { order: Order }) {
+  const status = getShipmentStatus(order);
+  const progress = getProgress(order);
+  const waybillNumber = order.waybills?.[0]?.waybillNumber ?? null;
+
+  return (
+    <Link
+      href={`/dashboard/orders/${order.id}`}
+      className="clay-card space-y-3 block active:scale-[0.98] transition-transform"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background:
+                status === "Delivered"
+                  ? "linear-gradient(145deg, var(--color-olive-400), var(--color-olive-600))"
+                  : "linear-gradient(145deg, #fbbf24, #d97706)",
+              boxShadow:
+                "3px 3px 8px rgba(23,29,9,0.18), -1px -1px 4px rgba(114,143,50,0.14)",
+            }}
+          >
+            {status === "Delivered" ? (
+              <CheckCircle size={16} className="text-white" />
+            ) : (
+              <Truck size={16} className="text-white" />
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-bold text-olive-900">
+              {order.description}
+            </p>
+            <p className="text-[11px] text-olive-400">
+              {order.trackingCode}
+              {waybillNumber && ` · ${waybillNumber}`}
+            </p>
+          </div>
+        </div>
+        <ShipmentStatusBadge status={status} />
+      </div>
+
+      {/* Route */}
+      <div className="clay-inset px-3 py-2.5 rounded-xl">
+        <div className="flex items-center gap-2 text-sm text-olive-700">
+          <MapPin size={13} className="text-olive-500 shrink-0" />
+          <span className="font-medium truncate">{order.pickupAddress}</span>
+          <div className="flex-1 border-t border-dashed border-olive-300" />
+          <ArrowRight size={13} className="text-olive-400 shrink-0" />
+          <span className="font-medium truncate">{order.deliveryAddress}</span>
+          <MapPin size={13} className="text-olive-600 shrink-0" />
+        </div>
+      </div>
+
+      {/* Progress */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-semibold text-olive-600">
+            {formatNaira(order.totalAmount)}
+          </span>
+          <span className="text-xs font-bold text-olive-700">{progress}%</span>
+        </div>
+        <ProgressBar progress={progress} status={status} />
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Clock size={12} className="text-olive-400" />
+          <span className="text-xs text-olive-500">
+            {new Date(order.createdAt).toLocaleDateString("en-NG", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}
+          </span>
+        </div>
+        {waybillNumber && (
+          <span className="text-xs font-mono text-olive-500">
+            {waybillNumber}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
 }
 
 // ================================================================
@@ -173,55 +203,66 @@ function getStatusConfig(status: ShipmentStatus): {
 // ================================================================
 
 export default function ShipmentsPage() {
-  // ── Active filter state ──────────────────────────────────────
-  const [activeFilter, setActiveFilter] = useState<string>("All");
-
-  // ── Search query ─────────────────────────────────────────────
+  const { user } = useAuth();
+  const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ── Derived counts for summary pills ────────────────────────
-  const inTransitCount = shipments.filter(
-    (s) => s.status === "In Transit"
-  ).length;
-  const deliveredCount = shipments.filter(
-    (s) => s.status === "Delivered"
-  ).length;
+  // Fetch all orders and filter to shipment-relevant statuses
+  const { orders, isLoading } = useOrders({ limit: 100 });
 
-  // ── Filtered shipments ───────────────────────────────────────
-  const filtered = shipments.filter((s) => {
-    const matchFilter =
-      activeFilter === "All" || s.status === activeFilter;
+  // Only show orders in shipping stages that belong to this user
+  const shipmentOrders = orders.filter(
+    (o) =>
+      ["SHIPPED", "IN_TRANSIT", "DELIVERED", "COMPLETED"].includes(o.status) &&
+      (o.sellerId === user?.id || o.buyerId === user?.id),
+  );
+
+  // Apply filter tab
+  const statusFilter = filterMap[activeFilter] ?? [];
+  const filtered = shipmentOrders.filter((o) => {
+    const matchFilter = statusFilter.includes(o.status);
     const matchSearch =
-      s.item.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.trackingNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      o.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.trackingCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (o.waybills?.[0]?.waybillNumber ?? "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
     return matchFilter && matchSearch;
   });
 
-  const filterTabs = ["All", "Processing", "In Transit", "Delivered"];
+  // Counts
+  const inTransitCount = shipmentOrders.filter(
+    (o) => o.status === "IN_TRANSIT",
+  ).length;
+  const deliveredCount = shipmentOrders.filter((o) =>
+    ["DELIVERED", "COMPLETED"].includes(o.status),
+  ).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">Loading shipments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
-      {/* ============================================================
-          MOBILE VIEW
-          ============================================================ */}
+      {/* ── MOBILE VIEW ──────────────────────────────────────────── */}
       <div className="lg:hidden min-h-screen">
         <MobilePageHeader title="Shipments" showBack={false} />
 
         <div className="px-4 pt-4 pb-6 space-y-4">
-          {/* ── Summary Pill Row ────────────────────────────── */}
+          {/* Summary pills */}
           <div className="grid grid-cols-2 gap-3">
-            {/* In transit */}
             <div className="clay-card !p-4 flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-xl flex items-center
-                           justify-center shrink-0"
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{
-                  background:
-                    "linear-gradient(145deg, #fbbf24, #d97706)",
-                  boxShadow:
-                    "4px 4px 10px rgba(23,29,9,0.20)," +
-                    " -2px -2px 6px rgba(251,191,36,0.18)",
+                  background: "linear-gradient(145deg, #fbbf24, #d97706)",
                 }}
               >
                 <Truck size={18} className="text-white" />
@@ -230,24 +271,15 @@ export default function ShipmentsPage() {
                 <p className="text-xl font-bold text-olive-900">
                   {inTransitCount}
                 </p>
-                <p className="text-[11px] text-olive-500 leading-tight">
-                  In Transit
-                </p>
+                <p className="text-[11px] text-olive-500">In Transit</p>
               </div>
             </div>
-
-            {/* Delivered */}
             <div className="clay-card !p-4 flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-xl flex items-center
-                           justify-center shrink-0"
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{
                   background:
-                    "linear-gradient(145deg, var(--color-olive-400)," +
-                    " var(--color-olive-600))",
-                  boxShadow:
-                    "4px 4px 10px rgba(23,29,9,0.20)," +
-                    " -2px -2px 6px rgba(114,143,50,0.18)",
+                    "linear-gradient(145deg, var(--color-olive-400), var(--color-olive-600))",
                 }}
               >
                 <CheckCircle size={18} className="text-white" />
@@ -256,22 +288,19 @@ export default function ShipmentsPage() {
                 <p className="text-xl font-bold text-olive-900">
                   {deliveredCount}
                 </p>
-                <p className="text-[11px] text-olive-500 leading-tight">
-                  Delivered
-                </p>
+                <p className="text-[11px] text-olive-500">Delivered</p>
               </div>
             </div>
           </div>
 
-          {/* ── Filter Tabs ─────────────────────────────────── */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          {/* Filter tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {filterTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveFilter(tab)}
                 className={[
-                  "px-4 py-2 rounded-full text-xs font-semibold",
-                  "whitespace-nowrap transition-all",
+                  "px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all",
                   activeFilter === tab
                     ? "clay-btn text-white"
                     : "clay-inset text-olive-600",
@@ -282,54 +311,50 @@ export default function ShipmentsPage() {
             ))}
           </div>
 
-          {/* ── Shipment Cards ──────────────────────────────── */}
+          {/* Cards */}
           <div className="space-y-3">
-            {filtered.map((shipment) => (
-              <MobileShipmentCard
-                key={shipment.id}
-                shipment={shipment}
-              />
-            ))}
-
-            {filtered.length === 0 && (
+            {filtered.length === 0 ? (
               <div className="clay-card py-10 text-center">
                 <Truck size={38} className="text-olive-300 mx-auto mb-3" />
-                <p className="text-sm text-olive-400">
-                  No shipments found
+                <p className="text-sm text-olive-500">
+                  {shipmentOrders.length === 0
+                    ? "No shipments yet"
+                    : "No shipments match your filter"}
                 </p>
               </div>
+            ) : (
+              filtered.map((order) => (
+                <MobileShipmentCard key={order.id} order={order} />
+              ))
             )}
           </div>
         </div>
       </div>
 
-      {/* ============================================================
-          DESKTOP VIEW
-          ============================================================ */}
+      {/* ── DESKTOP VIEW ─────────────────────────────────────────── */}
       <div className="hidden lg:block p-6 space-y-6">
-        {/* ── Header ─────────────────────────────────────────── */}
         <div>
           <h2 className="text-2xl font-bold text-olive-900">
             Shipment Tracking
           </h2>
           <p className="text-sm text-olive-500 mt-1">
-            {shipments.length} total shipments ·{" "}
-            {inTransitCount} currently in transit
+            {shipmentOrders.length} total shipments · {inTransitCount} in
+            transit
           </p>
         </div>
 
-        {/* ── Summary Stat Cards ─────────────────────────────── */}
+        {/* Stat cards */}
         <div className="grid grid-cols-4 gap-4">
           {[
             {
               label: "Total Shipments",
-              value: shipments.length,
+              value: shipmentOrders.length,
               icon: Package,
               grad: "var(--color-olive-400), var(--color-olive-600)",
             },
             {
               label: "Processing",
-              value: shipments.filter((s) => s.status === "Processing")
+              value: shipmentOrders.filter((o) => o.status === "SHIPPED")
                 .length,
               icon: Clock,
               grad: "#60a5fa, #3b82f6",
@@ -350,51 +375,43 @@ export default function ShipmentsPage() {
             <div key={stat.label} className="clay-card">
               <div className="flex items-center gap-3 mb-2">
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center
-                             justify-center shrink-0"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                   style={{
                     background: `linear-gradient(145deg, ${stat.grad})`,
                     boxShadow:
-                      "4px 4px 10px rgba(23,29,9,0.20)," +
-                      " -2px -2px 6px rgba(114,143,50,0.16)",
+                      "4px 4px 10px rgba(23,29,9,0.20), -2px -2px 6px rgba(114,143,50,0.16)",
                   }}
                 >
                   <stat.icon size={18} className="text-white" />
                 </div>
-                <p className="text-xs font-bold text-olive-500 uppercase
-                              tracking-wider">
+                <p className="text-xs font-bold text-olive-500 uppercase tracking-wider">
                   {stat.label}
                 </p>
               </div>
-              <p className="text-2xl font-bold text-olive-900">
-                {stat.value}
-              </p>
+              <p className="text-2xl font-bold text-olive-900">{stat.value}</p>
             </div>
           ))}
         </div>
 
-        {/* ── Search + Filters ───────────────────────────────── */}
+        {/* Search + Filters */}
         <div className="flex items-center gap-3">
           <div className="clay-inset flex items-center gap-2 px-3.5 py-2.5 w-64">
             <Search size={15} className="text-olive-400 shrink-0" />
             <input
               type="search"
-              placeholder="Search shipments..."
+              placeholder="Search by item, tracking code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent text-sm text-olive-800 outline-none
-                         placeholder:text-olive-400 w-full"
+              className="bg-transparent text-sm text-olive-800 outline-none placeholder:text-olive-400 w-full"
             />
           </div>
-
           <div className="flex gap-2">
             {filterTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveFilter(tab)}
                 className={[
-                  "px-4 py-2 rounded-full text-xs font-semibold",
-                  "whitespace-nowrap transition-all",
+                  "px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all",
                   activeFilter === tab
                     ? "clay-btn text-white"
                     : "clay-inset text-olive-600",
@@ -406,7 +423,7 @@ export default function ShipmentsPage() {
           </div>
         </div>
 
-        {/* ── Shipments Table ─────────────────────────────────── */}
+        {/* Table */}
         <div className="clay-card !p-0 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -414,39 +431,37 @@ export default function ShipmentsPage() {
                 <tr
                   style={{
                     background:
-                      "linear-gradient(145deg, var(--color-olive-50)," +
-                      " var(--color-cream-200))",
+                      "linear-gradient(145deg, var(--color-olive-50), var(--color-cream-200))",
                   }}
                 >
                   {[
-                    "Shipment ID",
+                    "Order",
                     "Item",
                     "Route",
                     "Progress",
-                    "Carrier",
-                    "ETA",
+                    "Amount",
                     "Status",
                     "",
                   ].map((col) => (
                     <th
                       key={col || "action"}
-                      scope="col"
-                      className="text-left text-[11px] font-bold
-                                 text-olive-500 uppercase tracking-wider
-                                 px-5 py-3.5"
+                      className="text-left text-[11px] font-bold text-olive-500 uppercase tracking-wider px-5 py-3.5"
                     >
                       {col}
                     </th>
                   ))}
                 </tr>
               </thead>
-
               <tbody>
-                {filtered.map((shipment, idx) => {
-                  const config = getStatusConfig(shipment.status);
+                {filtered.map((order, idx) => {
+                  const status = getShipmentStatus(order);
+                  const progress = getProgress(order);
+                  const waybillNumber =
+                    order.waybills?.[0]?.waybillNumber ?? null;
+
                   return (
                     <tr
-                      key={shipment.id}
+                      key={order.id}
                       className={[
                         "hover:bg-olive-50/30 transition-colors",
                         idx !== filtered.length - 1
@@ -454,100 +469,69 @@ export default function ShipmentsPage() {
                           : "",
                       ].join(" ")}
                     >
-                      {/* Shipment ID */}
                       <td className="px-5 py-4">
                         <p className="text-sm font-bold text-olive-600">
-                          {shipment.id}
+                          {order.trackingCode}
                         </p>
-                        <p className="text-xs text-olive-400 mt-0.5">
-                          {shipment.orderId}
-                        </p>
+                        {waybillNumber && (
+                          <p className="text-xs text-olive-400 font-mono mt-0.5">
+                            {waybillNumber}
+                          </p>
+                        )}
                       </td>
-
-                      {/* Item */}
                       <td className="px-5 py-4">
-                        <span className="text-sm font-medium text-olive-800">
-                          {shipment.item}
+                        <span className="text-sm font-medium text-olive-800 max-w-[160px] block truncate">
+                          {order.description}
                         </span>
                       </td>
-
-                      {/* Route */}
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 text-sm
-                                        text-olive-600">
-                          <span className="font-medium">{shipment.from}</span>
+                        <div className="flex items-center gap-1.5 text-sm text-olive-600 max-w-[200px]">
+                          <span className="truncate">
+                            {order.pickupAddress.split(",")[0]}
+                          </span>
                           <ArrowRight
                             size={13}
-                            className="text-olive-400"
+                            className="text-olive-400 shrink-0"
                           />
-                          <span className="font-medium">{shipment.to}</span>
+                          <span className="truncate">
+                            {order.deliveryAddress.split(",")[0]}
+                          </span>
                         </div>
                       </td>
-
-                      {/* Progress bar */}
                       <td className="px-5 py-4">
                         <div className="w-28">
-                          <div className="flex items-center justify-between
-                                          mb-1.5">
-                            <span className="text-xs font-semibold
-                                            text-olive-600">
-                              {shipment.progress}%
+                          <div className="flex justify-between mb-1.5">
+                            <span className="text-xs font-semibold text-olive-600">
+                              {progress}%
                             </span>
                           </div>
-                          {/* Track */}
                           <div className="clay-inset h-2 rounded-full overflow-hidden">
                             <div
-                              className="h-full rounded-full transition-all
-                                         duration-700"
+                              className="h-full rounded-full transition-all duration-700"
                               style={{
-                                width: `${shipment.progress}%`,
-                                background: `linear-gradient(90deg, ${
-                                  config.barColor
-                                    .replace("from-", "")
-                                    .replace(" to-", ", ")
-                                })`,
+                                width: `${progress}%`,
+                                background: getStatusConfig(status).barColor,
                               }}
                             />
                           </div>
                         </div>
                       </td>
-
-                      {/* Carrier */}
                       <td className="px-5 py-4">
-                        <span className="text-sm text-olive-600">
-                          {shipment.carrier}
+                        <span className="text-sm font-bold text-olive-800">
+                          {formatNaira(order.totalAmount)}
                         </span>
                       </td>
-
-                      {/* ETA */}
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5">
-                          <Clock size={13} className="text-olive-400" />
-                          <time className="text-xs text-olive-500">
-                            {shipment.eta}
-                          </time>
-                        </div>
+                        <ShipmentStatusBadge status={status} />
                       </td>
-
-                      {/* Status */}
                       <td className="px-5 py-4">
-                        <span
-                          className={`clay-badge ${config.colorClass}`}
-                        >
-                          {config.label}
-                        </span>
-                      </td>
-
-                      {/* Action */}
-                      <td className="px-5 py-4">
-                        <button
-                          className="clay-inset inline-flex p-2 rounded-xl
-                                     text-olive-500 hover:text-olive-800
-                                     transition-colors"
-                          aria-label={`Track ${shipment.id}`}
+                        <Link
+                          href={`/dashboard/orders/${order.id}`}
+                          className="clay-inset inline-flex p-2 rounded-xl text-olive-500 hover:text-olive-800 transition-colors"
+                          aria-label={`View ${order.trackingCode}`}
                         >
                           <Navigation size={15} />
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   );
@@ -558,124 +542,24 @@ export default function ShipmentsPage() {
             {filtered.length === 0 && (
               <div className="py-16 text-center">
                 <Truck size={44} className="text-olive-300 mx-auto mb-3" />
-                <p className="text-sm text-olive-400">
-                  No shipments match your search
+                <p className="text-sm text-olive-400 mb-2">
+                  {shipmentOrders.length === 0
+                    ? "No shipments yet"
+                    : "No shipments match your search"}
                 </p>
+                {shipmentOrders.length === 0 && (
+                  <Link
+                    href="/dashboard/orders/create"
+                    className="text-sm text-green-600 font-semibold hover:underline"
+                  >
+                    Create your first order →
+                  </Link>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
     </>
-  );
-}
-
-// ================================================================
-// SUB-COMPONENT: MobileShipmentCard
-// ================================================================
-// A single shipment card for the mobile list view.
-// Shows item, route, progress bar, carrier, and ETA.
-// ================================================================
-
-interface MobileShipmentCardProps {
-  shipment: Shipment;
-}
-
-function MobileShipmentCard({ shipment }: MobileShipmentCardProps) {
-  const config = getStatusConfig(shipment.status);
-
-  return (
-    <div className="clay-card space-y-3">
-      {/* ── Header row ─────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {/* Icon */}
-          <div
-            className="w-9 h-9 rounded-xl flex items-center
-                       justify-center shrink-0"
-            style={{
-              background:
-                shipment.status === "Delivered"
-                  ? "linear-gradient(145deg, var(--color-olive-400)," +
-                    " var(--color-olive-600))"
-                  : "linear-gradient(145deg, #fbbf24, #d97706)",
-              boxShadow:
-                "3px 3px 8px rgba(23,29,9,0.18)," +
-                " -1px -1px 4px rgba(114,143,50,0.14)",
-            }}
-          >
-            {shipment.status === "Delivered" ? (
-              <CheckCircle size={16} className="text-white" />
-            ) : (
-              <Truck size={16} className="text-white" />
-            )}
-          </div>
-
-          {/* Item name + shipment ID */}
-          <div>
-            <p className="text-sm font-bold text-olive-900">
-              {shipment.item}
-            </p>
-            <p className="text-[11px] text-olive-400">
-              {shipment.id} · {shipment.orderId}
-            </p>
-          </div>
-        </div>
-
-        {/* Status badge */}
-        <span className={`clay-badge ${config.colorClass} shrink-0`}>
-          {config.label}
-        </span>
-      </div>
-
-      {/* ── Route row ──────────────────────────────────────── */}
-      <div className="clay-inset px-3 py-2.5 rounded-xl">
-        <div className="flex items-center gap-2 text-sm text-olive-700">
-          <MapPin size={13} className="text-olive-500 shrink-0" />
-          <span className="font-medium">{shipment.from}</span>
-          <div className="flex-1 border-t border-dashed border-olive-300" />
-          <ArrowRight size={13} className="text-olive-400 shrink-0" />
-          <span className="font-medium">{shipment.to}</span>
-          <MapPin size={13} className="text-olive-600 shrink-0" />
-        </div>
-      </div>
-
-      {/* ── Progress bar ───────────────────────────────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs font-semibold text-olive-600">
-            {shipment.carrier}
-          </span>
-          <span className="text-xs font-bold text-olive-700">
-            {shipment.progress}%
-          </span>
-        </div>
-        {/* Track */}
-        <div className="clay-inset h-2.5 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{
-              width: `${shipment.progress}%`,
-              background:
-                shipment.status === "Delivered"
-                  ? "linear-gradient(90deg, var(--color-olive-400)," +
-                    " var(--color-olive-600))"
-                  : "linear-gradient(90deg, #fbbf24, #d97706)",
-            }}
-          />
-        </div>
-      </div>
-
-      {/* ── Footer row ─────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <Clock size={12} className="text-olive-400" />
-          <span className="text-xs text-olive-500">ETA: {shipment.eta}</span>
-        </div>
-        <span className="text-xs font-mono text-olive-500">
-          {shipment.trackingNumber}
-        </span>
-      </div>
-    </div>
   );
 }

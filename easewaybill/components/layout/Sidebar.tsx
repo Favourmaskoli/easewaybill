@@ -1,18 +1,3 @@
-// components/layout/Sidebar.tsx
-// ================================================================
-// SIDEBAR — Deep Olive Claymorphism
-// ================================================================
-// The sidebar background uses the darkest olive tones so that
-// the nav items, logo, and user card all read as raised/lit
-// elements against the deep olive base.
-// ================================================================
-
-// components/layout/Sidebar.tsx
-// ================================================================
-// SIDEBAR — Deep Olive Claymorphism
-// ================================================================
-
-
 "use client";
 
 import React from "react";
@@ -21,6 +6,7 @@ import { X, ChevronRight } from "lucide-react";
 import { sidebarNavItems, isRouteActive } from "@/lib/navigation";
 import Logo from "@/components/layout/Logo";
 import UserProfileCard from "@/components/layout/UserProfileCard";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,6 +15,20 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
+  const { user, logout } = useAuth();
+
+  const firstName = user?.firstName ?? "";
+  const lastName = user?.lastName ?? "";
+  const fullName = `${firstName} ${lastName}`.trim() || "User";
+  const email = user?.email ?? "";
+  const initials =
+    `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "U";
+
+  const handleLogout = async () => {
+    onClose();
+    await logout();
+  };
+
   return (
     <>
       {/* ── Backdrop Overlay ───────────────────────────────── */}
@@ -84,27 +84,19 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
                 onClick={onClose}
                 aria-current={active ? "page" : undefined}
                 className={[
-                  // Shared base styles
                   "flex items-center gap-3 px-4 py-3 rounded-2xl",
                   "font-semibold text-sm transition-all duration-200",
                   active
-                    ? // Active — raised cream-tinted pill
-                      "bg-cream-100 text-olive-800 shadow-[var(--shadow-clay-md)]"
-                    : // Inactive — cream text, subtle hover
-                      "text-cream-200 hover:bg-olive-500/40 hover:text-cream-50",
+                    ? "bg-cream-100 text-olive-800 shadow-[var(--shadow-clay-md)]"
+                    : "text-cream-200 hover:bg-olive-500/40 hover:text-cream-50",
                 ].join(" ")}
               >
-                {/* Icon */}
                 <item.icon
                   size={20}
                   aria-hidden="true"
                   className={active ? "text-olive-600" : "text-cream-300"}
                 />
-
-                {/* Label */}
                 <span className="flex-1">{item.label}</span>
-
-                {/* Active chevron */}
                 {active && (
                   <ChevronRight
                     size={15}
@@ -119,18 +111,20 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
 
         {/* ── Section hint above user card ───────────────────── */}
         <div className="px-4 pb-2">
-          <p className="text-[10px] text-olive-300 uppercase tracking-widest
-                        font-semibold px-3">
+          <p
+            className="text-[10px] text-olive-300 uppercase tracking-widest
+                        font-semibold px-3"
+          >
             Account
           </p>
         </div>
 
         {/* ── User Profile ───────────────────────────────────── */}
         <UserProfileCard
-          name="John Doe"
-          email="john@example.com"
-          initials="JD"
-          onLogout={() => console.log("Logout")}
+          name={fullName}
+          email={email}
+          initials={initials}
+          onLogout={handleLogout}
         />
       </aside>
     </>
