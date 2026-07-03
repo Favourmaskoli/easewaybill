@@ -1,7 +1,10 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 
-type UserRole = 'ADMIN' | 'SELLER' | 'BUYER' | 'RIDER';
+// ── Contextual roles — describe relationship to a specific order ──
+// These are INDEPENDENT of the UserRole account enum (USER/RIDER/ADMIN).
+// A single account can be SELLER on Order A and BUYER on Order B.
+type ContextualRole = 'ADMIN' | 'SELLER' | 'BUYER' | 'RIDER';
 
 export type OrderAction =
   | 'SEND_TO_BUYER'
@@ -19,7 +22,7 @@ export type OrderAction =
 export interface OrderTransition {
   to: OrderStatus;
   description: string;
-  roles: UserRole[];
+  roles: ContextualRole[];
 }
 
 export const ORDER_STATE_MACHINE: Record<
@@ -47,7 +50,7 @@ export const ORDER_STATE_MACHINE: Record<
     },
     CANCEL: {
       to: OrderStatus.CANCELLED,
-      roles: ['BUYER', 'SELLER', 'ADMIN'],
+      roles: ['SELLER', 'BUYER', 'ADMIN'],
       description: 'Cancel before payment',
     },
   },
@@ -60,7 +63,7 @@ export const ORDER_STATE_MACHINE: Record<
     },
     CANCEL: {
       to: OrderStatus.CANCELLED,
-      roles: ['BUYER', 'SELLER', 'ADMIN'],
+      roles: ['SELLER', 'BUYER', 'ADMIN'],
       description: 'Cancel before payment completes',
     },
   },
@@ -98,7 +101,7 @@ export const ORDER_STATE_MACHINE: Record<
     CONFIRM_SATISFACTION: {
       to: OrderStatus.COMPLETED,
       roles: ['BUYER', 'ADMIN'],
-      description: 'Buyer confirms satisfaction - escrow released',
+      description: 'Buyer confirms satisfaction — escrow released',
     },
     RAISE_DISPUTE: {
       to: OrderStatus.DISPUTED,
@@ -144,7 +147,7 @@ export function validateTransition(
     );
   }
 
-  if (!transition.roles.includes(role as UserRole)) {
+  if (!transition.roles.includes(role as ContextualRole)) {
     throw new ForbiddenException(
       `${role} is not allowed to change order from ${currentStatus} to ${nextStatus}`,
     );

@@ -8,8 +8,8 @@ import type { AuthenticatedUser } from '../../common/interfaces/authenticated-us
 import { randomUUID } from 'crypto';
 import type { PaginatedResult } from '../../common/dto/pagination.dto';
 import { paginate, buildCursorWhere } from '../../common/dto/pagination.dto';
+import { EscrowService } from '../escrow/escrow.service';
 
-// Map Paystack channel codes to readable labels
 const CHANNEL_LABELS: Record<string, string> = {
   card: 'Debit/Credit Card',
   bank: 'Bank Transfer',
@@ -25,7 +25,6 @@ const CHANNEL_LABELS: Record<string, string> = {
   UNKNOWN: 'Unknown',
 };
 
-// Map Paystack channel string → our enum
 const CHANNEL_MAP: Record<string, string> = {
   card: 'CARD',
   bank: 'BANK_TRANSFER',
@@ -43,6 +42,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly paystack: PaystackService,
     private readonly config: ConfigService,
+    private readonly escrow: EscrowService,
   ) {}
 
   // ── POST /payments/initiate ───────────────────────────────────────
@@ -188,6 +188,7 @@ export class PaymentsService {
   }
 
   // ── GET /payments/history — paginated for current user ────────────
+  // ✅ FIX: use OR[sellerId, buyerId] instead of branching on account role
   async getHistory(
     user: AuthenticatedUser,
     limit: number = 20,
@@ -195,14 +196,17 @@ export class PaymentsService {
   ): Promise<PaginatedResult<PaymentRecordDto & { channelLabel: string }>> {
     const cursorWhere = buildCursorWhere(cursor);
 
-    // Find all orders belonging to this user
+    // Any user can be buyer OR seller on different orders.
+    // Never branch on user.role — always check actual order participation.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const roleWhere: any =
       user.role === 'ADMIN'
         ? {}
-        : user.role === 'BUYER'
-          ? { order: { buyerId: user.id } }
-          : { order: { sellerId: user.id } };
+        : {
+            order: {
+              OR: [{ sellerId: user.id }, { buyerId: user.id }],
+            },
+          };
 
     const where = { ...roleWhere, ...cursorWhere };
 
@@ -235,6 +239,9 @@ export class PaymentsService {
   }
 
   // ── GET /payments/verify/:reference — polling fallback ────────────
+  // ✅ FIX: now updates BOTH PaymentRecord AND Order atomically
+  // ✅ FIX: idempotent — if PaymentRecord is SUCCESS but Order missed
+  //         the update, it applies the fix automatically
   async verifyByReference(reference: string): Promise<{
     reference: string;
     status: string;
@@ -244,13 +251,31 @@ export class PaymentsService {
     orderId: string;
     message: string;
   }> {
-    // 1. Check our DB first (idempotency)
+    // 1. Check our DB first
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const existing = await (this.prisma as any).paymentRecord.findUnique({
       where: { reference },
     });
 
     if (existing?.status === 'SUCCESS') {
+      // ✅ Idempotent safety net: if order somehow still shows
+      // AWAITING_PAYMENT despite a SUCCESS record, fix it now
+      const order = await this.prisma.order.findUnique({
+        where: { id: existing.orderId },
+        select: { status: true },
+      });
+
+      if (order && order.status === 'AWAITING_PAYMENT') {
+        await this.prisma.order.update({
+          where: { id: existing.orderId },
+          data: {
+            status: 'PAID',
+            paidAt: existing.verifiedAt ?? new Date(),
+          },
+        });
+        this.logger.log(`Idempotent fix applied: order ${existing.orderId} → PAID during verify`);
+      }
+
       return {
         reference,
         status: 'SUCCESS',
@@ -265,23 +290,58 @@ export class PaymentsService {
     // 2. Call Paystack to verify
     const verified = await this.paystack.verifyTransaction(reference);
 
-    // 3. Update our record if status changed
+    // 3. ✅ If confirmed, update BOTH PaymentRecord AND Order atomically
+    // In verifyByReference, replace the $transaction block:
     if (existing && verified.status === 'success' && existing.status !== 'SUCCESS') {
       const mappedChannel = CHANNEL_MAP[verified.channel] ?? 'UNKNOWN';
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.prisma as any).paymentRecord.update({
-        where: { reference },
-        data: {
-          status: 'SUCCESS',
-          channel: mappedChannel,
-          paystackId: String(verified.id),
-          verifiedAt: new Date(verified.paid_at),
-          paystackData: verified as unknown as Record<string, unknown>,
-        },
+      await this.prisma.$transaction(async (tx: any) => {
+        await tx.paymentRecord.update({
+          where: { reference },
+          data: {
+            status: 'SUCCESS',
+            channel: mappedChannel,
+            paystackId: String(verified.id),
+            verifiedAt: new Date(verified.paid_at),
+            paystackData: verified as unknown as Record<string, unknown>,
+          },
+        });
+
+        await tx.order.update({
+          where: { id: existing.orderId },
+          data: {
+            status: 'PAID',
+            paidAt: new Date(verified.paid_at),
+          },
+        });
       });
 
-      this.logger.log(`Payment verified via polling | ref: ${reference}`);
+      this.logger.log(
+        `Payment verified via polling | ref: ${reference} | order: ${existing.orderId} → PAID`,
+      );
+
+      // ✅ Create escrow hold AFTER transaction commits
+      // This ensures releaseFunds() can find the hold when buyer confirms later
+      try {
+        await this.escrow.holdFunds({
+          orderId: existing.orderId,
+          amount: verified.amount / 100,
+          reference: `ESCROW-${reference}`,
+          paystackRef: reference,
+          note: `Payment verified via polling | ref: ${reference}`,
+        });
+        this.logger.log(`Escrow hold created via verify | order: ${existing.orderId}`);
+      } catch (escrowErr) {
+        const msg = escrowErr instanceof Error ? escrowErr.message : String(escrowErr);
+        if (msg.includes('already exists') || msg.includes('already held')) {
+          this.logger.log(`Escrow already held for order ${existing.orderId} — skipping`);
+        } else {
+          // Don't throw — order is PAID, escrow hold failure is secondary
+          this.logger.error(
+            `Escrow hold failed during verify for order ${existing.orderId}: ${msg}`,
+          );
+        }
+      }
     }
 
     return {

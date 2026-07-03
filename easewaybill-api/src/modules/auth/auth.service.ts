@@ -21,7 +21,7 @@ interface PrismaUser {
   phone: string | null;
   role: UserRole;
   isEmailVerified: boolean;
-  isActive: boolean;
+  accountStatus: 'ACTIVE' | 'SUSPENDED';
   avatarUrl: string | null;
   refreshToken: string | null;
   refreshTokenExpiresAt: Date | null;
@@ -63,7 +63,7 @@ export class AuthService {
         firstName: dto.firstName,
         lastName: dto.lastName,
         phone: dto.phone,
-        role: dto.role ?? UserRole.SELLER,
+        role: UserRole.USER,
       },
     });
 
@@ -86,7 +86,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    if (!user.isActive) {
+    if (user.accountStatus !== 'ACTIVE') {
       throw new UnauthorizedException('Account is deactivated');
     }
 
@@ -110,8 +110,8 @@ export class AuthService {
       where: { id: payload.sub },
     });
 
-    if (!user || !user.refreshToken || !user.isActive) {
-      throw new UnauthorizedException('Refresh token revoked or user not found');
+    if (!user || !user.refreshToken || user.accountStatus !== 'ACTIVE') {
+      throw new UnauthorizedException('Refresh token revoked, user not found, or account is deactivated');
     }
 
     const isMatch = await bcrypt.compare(rawRefreshToken, user.refreshToken);

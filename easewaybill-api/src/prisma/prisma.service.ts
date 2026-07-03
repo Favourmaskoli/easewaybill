@@ -79,6 +79,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     await this.client.$disconnect();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get escrowAuditLog() {
+    return this.client.escrowAuditLog;
+  }
+
   // ── Test utility ─────────────────────────────────────────────────
   async cleanDatabase(): Promise<void> {
     if (process.env.NODE_ENV === 'production') {

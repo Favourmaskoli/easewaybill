@@ -1,6 +1,6 @@
 // ── Auth ──────────────────────────────────────────────────────
 
-export type UserRole = "SELLER" | "BUYER" | "RIDER" | "ADMIN";
+export type UserRole = "USER" | "RIDER" | "ADMIN";
 
 export interface AuthUser {
   id: string;
@@ -36,8 +36,8 @@ export interface RegisterDto {
   email: string;
   password: string;
   phone?: string;
-  // role is intentionally omitted — backend defaults to SELLER
-  // role does NOT restrict permissions. Any user can act as seller or buyer
+  // role is intentionally omitted — backend defaults to USER
+  // role does NOT restrict permissions. Any user can act as user or rider
   // depending on which orders they create vs which orders they pay for.
 }
 
@@ -98,6 +98,8 @@ export interface OrderParty {
   lastName: string;
   email: string;
   phone?: string | null;
+  vehicleType?: string | null;
+  vehiclePlate?: string | null;
 }
 
 export interface OrderWaybill {
@@ -141,6 +143,7 @@ export interface Order {
   waybills: OrderWaybill[];
   paidAt?: string | null;
   shippedAt?: string | null;
+  pickedUpAt?: string | null;
   deliveredAt?: string | null;
   completedAt?: string | null;
   disputedAt?: string | null;
@@ -215,7 +218,7 @@ export interface EscrowTransaction {
   createdAt: string;
 }
 
-export interface EscrowStatus2 {
+export interface EscrowStatusDetail {
   escrowStatus: string;
   orderStatus: string;
   trackingCode: string;
@@ -286,19 +289,32 @@ export interface WaybillTracking {
   estimatedDelivery?: string | null;
 }
 
-// ── Dashboard ─────────────────────────────────────────────────
-
 export interface AdminDashboard {
+  // Users
   totalUsers: number;
   totalSellers: number;
   totalBuyers: number;
   totalRiders: number;
+  // Orders
   totalOrders: number;
+  ordersDraft: number;
+  ordersPendingBuyer: number;
+  ordersAwaitingPayment: number;
+  ordersPaid: number;
+  ordersShipped: number;
+  ordersInTransit: number;
+  ordersDelivered: number;
   ordersCompleted: number;
+  ordersCancelled: number;
   ordersDisputed: number;
+  ordersRefunded: number;
+  // Revenue
   totalRevenueHeld: number;
   totalRevenueReleased: number;
+  totalRevenueRefunded: number;
   totalPlatformFees: number;
+  // Disputes
   openDisputes: number;
+  resolvedDisputes: number;
   generatedAt: string;
 }

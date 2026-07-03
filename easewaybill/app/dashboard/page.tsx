@@ -239,6 +239,7 @@ function toMockOrders(orders: Order[]): MockOrder[] {
       month: "short",
       year: "numeric",
     }),
+    buyerConfirmedAt: o.buyerConfirmedAt ?? null,
   }));
 }
 
@@ -435,7 +436,8 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm font-bold text-green-800">
-                  {mySellerOrders.length} order{mySellerOrders.length !== 1 ? "s" : ""} as Seller
+                  {mySellerOrders.length} order
+                  {mySellerOrders.length !== 1 ? "s" : ""} as Seller
                 </p>
                 <p className="text-xs text-green-600">
                   You created these orders
@@ -449,11 +451,10 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-blue-800">
-                    {myBuyerOrders.length} order{myBuyerOrders.length !== 1 ? "s" : ""} as Buyer
+                    {myBuyerOrders.length} order
+                    {myBuyerOrders.length !== 1 ? "s" : ""} as Buyer
                   </p>
-                  <p className="text-xs text-blue-600">
-                    You are buying these
-                  </p>
+                  <p className="text-xs text-blue-600">You are buying these</p>
                 </div>
               </div>
             )}

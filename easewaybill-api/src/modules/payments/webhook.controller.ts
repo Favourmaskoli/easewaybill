@@ -1,22 +1,16 @@
-import {
-  Controller,
-  Headers,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Req,
-} from '@nestjs/common';
+import { Controller, Headers, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { WebhookService } from './webhook.service';
 import { Public } from '../auth/decorators/public.decorator';
+import { Logger } from '@nestjs/common';
 
 @ApiTags('webhooks')
 @Controller('payments')
 export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
-
+  private readonly logger = new Logger(WebhookController.name);
   // ── POST /payments/webhook ────────────────────────────────────────
   @Public()
   @Post('webhook')
@@ -29,6 +23,9 @@ export class WebhookController {
     // Raw body is required for HMAC signature verification
     // Set up in main.ts via rawBody: true
     const rawBody = req.rawBody?.toString('utf-8') ?? '';
+    this.logger.log(`Signature: ${signature}`);
+    this.logger.log(`Raw body: ${rawBody}`);
+    this.logger.log('Webhook received');
 
     return this.webhookService.handleWebhook(rawBody, signature);
   }

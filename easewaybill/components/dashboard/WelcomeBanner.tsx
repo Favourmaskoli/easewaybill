@@ -96,10 +96,8 @@ export default function WelcomeBanner({
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   const roleLabel =
-    user?.role === "SELLER"
-      ? "Seller"
-      : user?.role === "BUYER"
-        ? "Buyer"
+    user?.role === "USER"
+      ? "User"
         : user?.role === "RIDER"
           ? "Rider"
           : "Admin";

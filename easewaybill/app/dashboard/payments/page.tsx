@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,7 +12,6 @@ import {
   TrendingUp,
   Clock,
   Receipt,
-  Package,
   ExternalLink,
 } from "lucide-react";
 import MobilePageHeader from "@/components/layout/MobilePageHeader";
@@ -22,6 +20,8 @@ import { useOrders } from "@/lib/hooks/useOrders";
 import { paymentsApi } from "@/lib/api/payments.api";
 import { formatNaira, formatDate } from "@/lib/utils/format";
 import type { PaymentRecord, Order } from "@/lib/types/api.types";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 
 // ================================================================
 // HELPERS
@@ -54,7 +54,7 @@ function isCredit(type: string): boolean {
 }
 
 // ================================================================
-// SUB-COMPONENTS — defined outside to prevent remount on re-render
+// SUB-COMPONENTS
 // ================================================================
 
 interface SummaryCardProps {
@@ -120,16 +120,16 @@ function MobilePaymentRow({ payment, order }: MobilePaymentRowProps) {
         <p className="text-sm font-semibold text-olive-900 truncate">
           {order?.trackingCode ?? payment.orderId} · {payment.channelLabel}
         </p>
-        <p className="text-xs text-olive-400 mt-0.5">
-          {formatDate(payment.createdAt)}
-        </p>
+        <p className="text-xs text-olive-400 mt-0.5">{formatDate(payment.createdAt)}</p>
       </div>
       <div className="text-right shrink-0">
         <p className={`text-sm font-bold ${credit ? "text-olive-600" : "text-olive-800"}`}>
           {credit ? "+" : ""}
           {formatNaira(payment.amount)}
         </p>
-        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full mt-1 inline-block ${getPaymentStatusColor(payment.status)}`}>
+        <span
+          className={`text-[9px] font-semibold px-2 py-0.5 rounded-full mt-1 inline-block ${getPaymentStatusColor(payment.status)}`}
+        >
           {getPaymentStatusLabel(payment.status)}
         </span>
       </div>
@@ -142,22 +142,22 @@ function MobilePaymentRow({ payment, order }: MobilePaymentRowProps) {
 // ================================================================
 
 export default function PaymentsPage() {
-  const router = useRouter();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
 
-  // ── Fetch real orders and payment history ─────────────────────
-  const { orders, isLoading: ordersLoading } = useOrders({ limit: 50 });
+  // ── Orders ────────────────────────────────────────────────────
+  const { orders, isLoading: ordersLoading, refetch: refetchOrders } = useOrders({ limit: 50 });
+
+  // ── Payment history ───────────────────────────────────────────
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsFetched, setPaymentsFetched] = useState(false);
 
-  // Fetch payment history once on mount
   const fetchPayments = async () => {
     if (paymentsFetched) return;
     setPaymentsLoading(true);
     try {
       const result = await paymentsApi.history(50);
-      // result may be array or paginated
       const list = Array.isArray(result)
         ? result
         : (result as unknown as { data: PaymentRecord[] }).data ?? [];
@@ -170,12 +170,61 @@ export default function PaymentsPage() {
     }
   };
 
-  // Trigger fetch
   if (!paymentsFetched && !paymentsLoading) {
     void fetchPayments();
   }
 
-  // ── Derive stats from real orders ─────────────────────────────
+  // ── Paystack callback verification ───────────────────────────
+  // When Paystack redirects back, the URL contains ?reference=xxx
+  // We call verify immediately so the order updates to PAID without
+  // waiting for the webhook (which can be delayed or misconfigured).
+  type VerifyStatus =
+  | "idle"
+  | "verifying"
+  | "success"
+  | "failed";
+
+const [verifyStatus, setVerifyStatus] =
+  useState<VerifyStatus>("idle");
+  const verifyAttempted = useRef(false);
+
+  useEffect(() => {
+    const reference =
+      searchParams.get("reference") ?? searchParams.get("trxref");
+
+    if (!reference) return;
+    if (verifyAttempted.current) return;
+    verifyAttempted.current = true;
+
+    const verify = async () => {
+      setVerifyStatus("verifying");
+      try {
+        await paymentsApi.verify(reference);
+        setVerifyStatus("success");
+
+        // Refetch orders so PAID status is reflected immediately
+        await refetchOrders();
+
+        // Also refresh payment history
+        setPaymentsFetched(false);
+        setPayments([]);
+      } catch (err) {
+        console.error("Payment verification failed:", err);
+        setVerifyStatus("failed");
+      }
+    };
+
+    void verify();
+  }, [searchParams]);
+
+  // Auto-dismiss success banner after 5 seconds
+  useEffect(() => {
+    if (verifyStatus !== "success") return;
+    const t = setTimeout(() => setVerifyStatus("idle"), 5000);
+    return () => clearTimeout(t);
+  }, [verifyStatus]);
+
+  // ── Derive stats ──────────────────────────────────────────────
   const myOrders = orders.filter(
     (o) => o.sellerId === user?.id || o.buyerId === user?.id,
   );
@@ -189,10 +238,12 @@ export default function PaymentsPage() {
     .reduce((sum, o) => sum + parseFloat(o.sellerPayout), 0);
 
   const pendingPaymentOrders = myOrders.filter(
-    (o) => o.status === "AWAITING_PAYMENT" && o.buyerId === user?.id,
+    (o) =>
+      o.status === "AWAITING_PAYMENT" &&
+      (o.buyerId === user?.id ||
+        o.buyerEmail?.toLowerCase() === user?.email?.toLowerCase()),
   );
 
-  // Order lookup map for payment rows
   const orderMap = Object.fromEntries(orders.map((o) => [o.id, o]));
 
   // ── Initiate payment ──────────────────────────────────────────
@@ -203,9 +254,9 @@ export default function PaymentsPage() {
     try {
       const result = await paymentsApi.initiate(
         orderId,
+        // Return to THIS page with the reference so we can verify
         `${window.location.origin}/dashboard/payments?callback=true`,
       );
-      // Redirect to Paystack
       window.location.href = result.authorizationUrl;
     } catch (err) {
       console.error("Payment initiation failed:", err);
@@ -217,7 +268,6 @@ export default function PaymentsPage() {
 
   const isLoading = ordersLoading || paymentsLoading;
 
-  // ── Loading state ─────────────────────────────────────────────
   if (isLoading && !paymentsFetched) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -231,13 +281,34 @@ export default function PaymentsPage() {
 
   return (
     <>
+      {/* ── Verification status banner ─────────────────────────── */}
+      {verifyStatus === "verifying" && (
+        <div className="fixed top-0 inset-x-0 z-50 bg-yellow-500 text-white text-sm font-semibold text-center py-3 flex items-center justify-center gap-2">
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          Verifying your payment with Paystack...
+        </div>
+      )}
+      {verifyStatus === "success" && (
+        <div className="fixed top-0 inset-x-0 z-50 bg-green-600 text-white text-sm font-semibold text-center py-3">
+          ✓ Payment confirmed — your order is now PAID
+        </div>
+      )}
+      {verifyStatus === "failed" && (
+        <div className="fixed top-0 inset-x-0 z-50 bg-red-500 text-white text-sm font-semibold text-center py-3">
+          Payment verification failed — please contact support or try again
+        </div>
+      )}
+
       {/* ── MOBILE VIEW ──────────────────────────────────────────── */}
       <div className="lg:hidden min-h-screen">
         <MobilePageHeader title="Payments" showBack={false} />
 
-        <div className="px-4 pt-4 pb-6 space-y-4">
-
-          {/* Pending payments — orders awaiting buyer payment */}
+        <div
+          className={`px-4 pt-4 pb-6 space-y-4 ${
+            verifyStatus !== "idle" ? "mt-10" : ""
+          }`}
+        >
+          {/* Pending payments */}
           {pendingPaymentOrders.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-sm font-bold text-olive-800">
@@ -261,9 +332,7 @@ export default function PaymentsPage() {
 
                   <div className="clay-inset p-4 rounded-xl mb-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-olive-700">
-                        Amount
-                      </p>
+                      <p className="text-sm font-semibold text-olive-700">Amount</p>
                       <p className="text-2xl font-bold text-olive-900">
                         {formatNaira(order.totalAmount)}
                       </p>
@@ -291,7 +360,7 @@ export default function PaymentsPage() {
             </div>
           )}
 
-          {/* Escrow balance card */}
+          {/* Escrow balance */}
           <div className="clay-card-dark text-white">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -306,7 +375,8 @@ export default function PaymentsPage() {
               {formatNaira(totalInEscrow)}
             </p>
             <p className="text-xs text-olive-300">
-              {myOrders.filter((o) => o.escrowStatus === "HOLDING").length} active orders
+              {myOrders.filter((o) => o.escrowStatus === "HOLDING").length}{" "}
+              active orders
             </p>
           </div>
 
@@ -342,7 +412,11 @@ export default function PaymentsPage() {
       </div>
 
       {/* ── DESKTOP VIEW ─────────────────────────────────────────── */}
-      <div className="hidden lg:block p-6 space-y-6">
+      <div
+        className={`hidden lg:block p-6 space-y-6 ${
+          verifyStatus !== "idle" ? "mt-10" : ""
+        }`}
+      >
         <div>
           <h2 className="text-2xl font-bold text-olive-900">Payments</h2>
           <p className="text-sm text-olive-500 mt-1">
@@ -512,7 +586,8 @@ export default function PaymentsPage() {
                         </td>
                         <td className="px-5 py-4">
                           <span className="text-sm font-semibold text-olive-700">
-                            {order?.trackingCode ?? payment.orderId.slice(0, 8)}
+                            {order?.trackingCode ??
+                              payment.orderId.slice(0, 8)}
                           </span>
                         </td>
                         <td className="px-5 py-4">
@@ -523,9 +598,15 @@ export default function PaymentsPage() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5">
                             {credit ? (
-                              <ArrowUpRight size={15} className="text-olive-500" />
+                              <ArrowUpRight
+                                size={15}
+                                className="text-olive-500"
+                              />
                             ) : (
-                              <ArrowDownRight size={15} className="text-amber-500" />
+                              <ArrowDownRight
+                                size={15}
+                                className="text-amber-500"
+                              />
                             )}
                             <span className="text-xs text-olive-600">
                               {credit ? "Credit" : "Debit"}
@@ -533,13 +614,19 @@ export default function PaymentsPage() {
                           </div>
                         </td>
                         <td className="px-5 py-4">
-                          <span className={`text-sm font-bold ${credit ? "text-olive-600" : "text-olive-800"}`}>
+                          <span
+                            className={`text-sm font-bold ${
+                              credit ? "text-olive-600" : "text-olive-800"
+                            }`}
+                          >
                             {credit ? "+" : ""}
                             {formatNaira(payment.amount)}
                           </span>
                         </td>
                         <td className="px-5 py-4">
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getPaymentStatusColor(payment.status)}`}>
+                          <span
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getPaymentStatusColor(payment.status)}`}
+                          >
                             {getPaymentStatusLabel(payment.status)}
                           </span>
                         </td>

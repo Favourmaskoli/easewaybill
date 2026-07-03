@@ -1,5 +1,5 @@
 import { IsBoolean, IsEnum, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
 export class UpdateProfileDto {
@@ -21,12 +21,37 @@ export class UpdateProfileDto {
   @MaxLength(20)
   phone?: string;
 
-  @ApiPropertyOptional({ example: 'https://res.cloudinary.com/...' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsUrl()
   avatarUrl?: string;
 
-  // Rider-specific fields
+  // ── Seller fields ──────────────────────────────────────────────
+  @ApiPropertyOptional({ example: 'Chidi Electronics' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  businessName?: string;
+
+  @ApiPropertyOptional({ example: 'Chidi Okonkwo' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  bankAccountName?: string;
+
+  @ApiPropertyOptional({ example: '0123456789' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  bankAccountNumber?: string;
+
+  @ApiPropertyOptional({ example: '058', description: 'Paystack bank code' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  bankCode?: string;
+
+  // ── Rider fields ───────────────────────────────────────────────
   @ApiPropertyOptional({ example: 'Motorcycle' })
   @IsOptional()
   @IsString()

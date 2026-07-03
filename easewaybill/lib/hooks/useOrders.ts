@@ -19,7 +19,6 @@ import { useState, useEffect, useRef } from "react";
 import { ordersApi } from "@/lib/api/orders.api";
 import type { Order, CreateOrderDto } from "@/lib/types/api.types";
 import type { OrderFilters } from "@/lib/api/orders.api";
-
 export function useOrders(filters?: OrderFilters) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
@@ -35,7 +34,6 @@ export function useOrders(filters?: OrderFilters) {
   const refetch = () => setFetchKey((k) => k + 1);
 
   useEffect(() => {
-    // ── Don't fetch if no token ───────────────────────────────
     const hasToken =
       typeof window !== "undefined" &&
       (localStorage.getItem("accessToken") ||
@@ -62,6 +60,7 @@ export function useOrders(filters?: OrderFilters) {
       setIsLoading(true);
       setError(null);
       try {
+        // ordersApi.list() already unwraps to PaginatedResponse<Order>
         const result = await ordersApi.list(filtersRef.current);
         if (!cancelled) {
           setOrders(result.data);
@@ -80,22 +79,13 @@ export function useOrders(filters?: OrderFilters) {
     };
 
     void run();
-
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchKey, filters?.status, filters?.limit, filters?.search]);
 
-  return {
-    orders,
-    total,
-    hasNextPage,
-    nextCursor,
-    isLoading,
-    error,
-    refetch,
-  };
+  return { orders, total, hasNextPage, nextCursor, isLoading, error, refetch };
 }
 
 export function useOrder(id: string) {
@@ -124,7 +114,6 @@ export function useOrder(id: string) {
     };
 
     void run();
-
     return () => {
       cancelled = true;
     };
@@ -141,16 +130,16 @@ export function useCreateOrder() {
     setIsLoading(true);
     setError(null);
     try {
-      const order = await ordersApi.create(dto);
-      return order;
+      return await ordersApi.create(dto);
     } catch (err: unknown) {
       const message = (
         err as { response?: { data?: { message?: string | string[] } } }
       )?.response?.data?.message;
-      const errorText = Array.isArray(message)
-        ? message[0]
-        : (message ?? "Failed to create order");
-      setError(errorText);
+      setError(
+        Array.isArray(message)
+          ? message[0]
+          : (message ?? "Failed to create order"),
+      );
       return null;
     } finally {
       setIsLoading(false);
@@ -171,8 +160,7 @@ export function useUpdateOrderStatus() {
     setIsLoading(true);
     setError(null);
     try {
-      const order = await ordersApi.updateStatus(id, status);
-      return order;
+      return await ordersApi.updateStatus(id, status);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -185,4 +173,29 @@ export function useUpdateOrderStatus() {
   };
 
   return { updateStatus, isLoading, error };
+}
+
+// Buyer confirms an order created for them — PENDING_BUYER → AWAITING_PAYMENT
+export function useConfirmOrder() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const confirmOrder = async (id: string): Promise<Order | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Calls ordersApi.confirm() — matches your actual orders.api.ts method name
+      return await ordersApi.confirm(id);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to confirm order";
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { confirmOrder, isLoading, error };
 }

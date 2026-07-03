@@ -153,7 +153,7 @@ function ImagePreviewCard({
 }
 
 // ================================================================
-// FORM FIELDS COMPONENT — also outside main component
+// FORM FIELDS COMPONENT — outside main component
 // ================================================================
 
 interface FormFieldsProps {
@@ -278,23 +278,21 @@ function FormFields({
         />
       </FormField>
 
-      {/* Amounts */}
-      {/* <div className={isDesktop ? "grid grid-cols-2 gap-5" : "space-y-5"}> */}
-        <FormField
-          label="Item Price (₦)"
-          icon={DollarSign}
-          error={errors.itemPrice}
-        >
-          <input
-            type="text"
-            placeholder="e.g. 350,000"
-            value={formData.itemPrice}
-            onChange={(e) => onFieldChange("itemPrice", e.target.value)}
-            className={`clay-input ${errors.itemPrice ? "border-red-400" : ""}`}
-            inputMode="decimal"
-          />
-        </FormField>
-      {/* </div> */}
+      {/* Item price */}
+      <FormField
+        label="Item Price (₦)"
+        icon={DollarSign}
+        error={errors.itemPrice}
+      >
+        <input
+          type="text"
+          placeholder="e.g. 350,000"
+          value={formData.itemPrice}
+          onChange={(e) => onFieldChange("itemPrice", e.target.value)}
+          className={`clay-input ${errors.itemPrice ? "border-red-400" : ""}`}
+          inputMode="decimal"
+        />
+      </FormField>
 
       {/* Image upload */}
       <div>
@@ -471,6 +469,10 @@ export default function CreateOrderPage() {
       ],
     });
 
+    // ✅ No sendToBuyer call needed — the backend now creates orders
+    // directly in PENDING_BUYER status (orders.service.ts create method).
+    // The buyer is notified via ORDER_SENT_TO_BUYER event immediately.
+
     setIsSubmitting(false);
 
     if (order) {
@@ -536,7 +538,7 @@ export default function CreateOrderPage() {
 
   return (
     <>
-      {/* Hidden file input — lives here so ref works */}
+      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"

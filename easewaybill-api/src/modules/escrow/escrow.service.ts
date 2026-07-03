@@ -16,6 +16,9 @@ import { AuditLogResponseDto } from './dto/audit-log-response.dto';
 import { EscrowSummaryDto } from './dto/escrow-summary.dto';
 import { ESCROW_QUEUE, EscrowJobs } from './escrow.constants';
 
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationEvents, EscrowEventPayload } from '../notifications/notifications.events';
+
 const AUTO_RELEASE_DELAY_MS = 48 * 60 * 60 * 1000;
 
 interface AuditEntry {
@@ -38,9 +41,38 @@ export class EscrowService {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue(ESCROW_QUEUE) private readonly escrowQueue: Queue,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  // ── scheduleAutoRelease ──────────────────────────────────────────
+  // Queue-only concern, no DB writes. Called by webhook.service.ts after
+  // it creates the ESCROW_HOLD row itself, so the webhook doesn't have to
+  // go through holdFunds() (which would reject because the order is
+  // already PAID by that point). jobId is deterministic per order, so
+  // calling this more than once for the same order (e.g. webhook retry)
+  // just upserts the same delayed job instead of creating a duplicate.
+  async scheduleAutoRelease(orderId: string): Promise<void> {
+    await this.escrowQueue.add(
+      EscrowJobs.AUTO_RELEASE,
+      { orderId },
+      {
+        delay: AUTO_RELEASE_DELAY_MS,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        jobId: `auto-release-${orderId}`,
+        removeOnComplete: { count: 100 },
+        removeOnFail: { count: 500 },
+      },
+    );
+    this.logger.log(`Auto-release scheduled for order [${orderId}] in 48h`);
+  }
+
   // ── holdFunds ─────────────────────────────────────────────────────
+  // NOTE: no longer called from the Paystack webhook — it now creates the
+  // ESCROW_HOLD row directly inside its own transaction and calls
+  // scheduleAutoRelease() above instead. This method remains for any other
+  // direct/manual/admin callers that still need the full guarded flow
+  // (including scheduling auto-release itself, via the shared helper).
   async holdFunds(dto: HoldFundsDto): Promise<EscrowResponseDto> {
     const order = await this.getOrderOrThrow(dto.orderId);
 
@@ -113,21 +145,22 @@ export class EscrowService {
         metadata: { paystackRef: dto.paystackRef },
       });
 
+      this.eventEmitter.emit(NotificationEvents.ORDER_PAID, {
+        orderId: dto.orderId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        trackingCode: (order as any).trackingCode,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sellerId: (order as any).sellerId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        buyerId: (order as any).buyerId,
+        amount: dto.amount,
+        type: 'HOLD',
+      } as EscrowEventPayload);
+
       return transaction;
     });
 
-    await this.escrowQueue.add(
-      EscrowJobs.AUTO_RELEASE,
-      { orderId: dto.orderId },
-      {
-        delay: AUTO_RELEASE_DELAY_MS,
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-        jobId: `auto-release-${dto.orderId}`,
-        removeOnComplete: { count: 100 },
-        removeOnFail: { count: 500 },
-      },
-    );
+    await this.scheduleAutoRelease(dto.orderId);
 
     this.logger.log(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -245,6 +278,16 @@ export class EscrowService {
         note: releaseTransaction.note ?? undefined,
         metadata: { platformFee, triggeredBy },
       });
+      this.eventEmitter.emit(NotificationEvents.ESCROW_RELEASED, {
+        orderId: dto.orderId,
+        trackingCode,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sellerId: (order as any).sellerId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        buyerId: (order as any).buyerId,
+        amount: sellerPayout,
+        type: 'RELEASE',
+      } as EscrowEventPayload);
 
       return releaseTransaction;
     });
@@ -336,6 +379,16 @@ export class EscrowService {
         note: refundTransaction.note ?? undefined,
         metadata: { reason: 'dispute_resolved_buyer_wins' },
       });
+      this.eventEmitter.emit(NotificationEvents.ESCROW_REFUNDED, {
+        orderId: dto.orderId,
+        trackingCode,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sellerId: (order as any).sellerId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        buyerId: (order as any).buyerId,
+        amount: refundAmount,
+        type: 'REFUND',
+      } as EscrowEventPayload);
 
       return refundTransaction;
     });
@@ -460,7 +513,7 @@ export class EscrowService {
   async getAuditLog(orderId: string): Promise<AuditLogResponseDto[]> {
     await this.getOrderOrThrow(orderId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const logs = await (this.prisma as any).escrowAuditLog.findMany({
+    const logs = await this.prisma.escrowAuditLog.findMany({
       where: { orderId },
       orderBy: { createdAt: 'asc' },
     });

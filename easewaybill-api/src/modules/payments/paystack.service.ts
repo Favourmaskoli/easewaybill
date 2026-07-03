@@ -175,6 +175,17 @@ export class PaystackService {
     id: number;
     status: string;
   }> {
+    // ── TEST MODE BYPASS ─────────────────────────────────────────
+    // Remove this block once Paystack account is verified
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.warn(`TEST MODE: Simulating transfer for ref ${params.reference}`);
+      return {
+        transfer_code: `TRF_test_${Date.now()}`,
+        id: Math.floor(Math.random() * 999999),
+        status: 'pending',
+      };
+    }
+    // ───────────────────────────────────────────────────────────
     try {
       const { data } = await this.http.post<{
         status: boolean;

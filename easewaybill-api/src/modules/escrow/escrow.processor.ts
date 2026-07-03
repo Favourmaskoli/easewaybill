@@ -31,6 +31,7 @@ export class EscrowProcessor extends WorkerHost {
       await this.escrowService.releaseFunds(
         {
           orderId,
+          reference: `AUTO-RELEASE-${orderId}-${Date.now()}`,
           note: 'Auto-released after 48h — buyer did not raise a dispute',
         },
         'auto-release',
@@ -40,20 +41,23 @@ export class EscrowProcessor extends WorkerHost {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
 
-      // These are expected — buyer already acted or order in terminal state
-      if (
+      // ✅ All expected skip conditions — none of these should fail or retry the job
+      const isSafeSkip =
         message.includes('already been released') ||
+        message.includes('already released') ||
+        message.includes('No active escrow hold found') || // ← ADD: buyer already confirmed
         message.includes('COMPLETED') ||
         message.includes('DISPUTED') ||
         message.includes('CANCELLED') ||
-        message.includes('REFUNDED')
-      ) {
+        message.includes('REFUNDED');
+
+      if (isSafeSkip) {
         this.logger.log(`Auto-release skipped for order [${orderId}]: ${message}`);
-        return;
+        return; // ✅ Do not rethrow — job completes successfully
       }
 
       this.logger.error(`Auto-release failed for order [${orderId}]: ${message}`);
-      throw err;
+      throw err; // Only rethrow for genuinely unexpected errors
     }
   }
 }

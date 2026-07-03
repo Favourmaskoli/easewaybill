@@ -48,7 +48,7 @@ async function main() {
       passwordHash: await bcrypt.hash('Admin@123456', BCRYPT_ROUNDS),
       firstName: 'Super', lastName: 'Admin',
       phone: '+2348000000001',
-      role: 'ADMIN', isEmailVerified: true, isActive: true,
+      role: 'ADMIN', isEmailVerified: true, accountStatus: 'ACTIVE',
     },
   });
 
@@ -58,7 +58,7 @@ async function main() {
       passwordHash: await bcrypt.hash('Seller@123456', BCRYPT_ROUNDS),
       firstName: 'Chidi', lastName: 'Okonkwo',
       phone: '+2348012345678',
-      role: 'SELLER', isEmailVerified: true, isActive: true,
+      role: 'USER', isEmailVerified: true, accountStatus: "ACTIVE",
       businessName: 'Chidi Electronics',
       bankAccountName: 'Chidi Okonkwo',
       bankAccountNumber: '0123456789',
@@ -72,7 +72,7 @@ async function main() {
       passwordHash: await bcrypt.hash('Seller@123456', BCRYPT_ROUNDS),
       firstName: 'Ngozi', lastName: 'Adeyemi',
       phone: '+2348033445566',
-      role: 'SELLER', isEmailVerified: true, isActive: true,
+      role: 'USER', isEmailVerified: true, accountStatus: 'ACTIVE',
       businessName: 'Ngozi Fashion House',
       bankAccountName: 'Ngozi Adeyemi',
       bankAccountNumber: '9876543210',
@@ -86,7 +86,7 @@ async function main() {
       passwordHash: await bcrypt.hash('Buyer@123456', BCRYPT_ROUNDS),
       firstName: 'Amaka', lastName: 'Nwosu',
       phone: '+2348099887766',
-      role: 'BUYER', isEmailVerified: true, isActive: true,
+      role: 'USER', isEmailVerified: true, accountStatus: 'ACTIVE',
     },
   });
 
@@ -96,7 +96,7 @@ async function main() {
       passwordHash: await bcrypt.hash('Buyer@123456', BCRYPT_ROUNDS),
       firstName: 'Tunde', lastName: 'Bakare',
       phone: '+2348077665544',
-      role: 'BUYER', isEmailVerified: true, isActive: true,
+      role: 'USER', isEmailVerified: true, accountStatus: 'ACTIVE',
     },
   });
 
@@ -106,7 +106,7 @@ async function main() {
       passwordHash: await bcrypt.hash('Rider@123456', BCRYPT_ROUNDS),
       firstName: 'Emeka', lastName: 'Eze',
       phone: '+2348087654321',
-      role: 'RIDER', isEmailVerified: true, isActive: true,
+      role: 'USER', isEmailVerified: true, accountStatus: 'ACTIVE',
       isAvailable: true, vehicleType: 'Motorcycle', vehiclePlate: 'LAG-234-AB',
     },
   });

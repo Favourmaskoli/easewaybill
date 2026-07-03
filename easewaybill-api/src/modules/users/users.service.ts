@@ -75,6 +75,10 @@ export class UsersService {
         ...(dto.vehicleType !== undefined && { vehicleType: dto.vehicleType }),
         ...(dto.vehiclePlate !== undefined && { vehiclePlate: dto.vehiclePlate }),
         ...(dto.isAvailable !== undefined && { isAvailable: dto.isAvailable }),
+        ...(dto.businessName !== undefined && { businessName: dto.businessName }),
+        ...(dto.bankAccountName !== undefined && { bankAccountName: dto.bankAccountName }),
+        ...(dto.bankAccountNumber !== undefined && { bankAccountNumber: dto.bankAccountNumber }),
+        ...(dto.bankCode !== undefined && { bankCode: dto.bankCode }),
       },
       select: USER_SELECT,
     });
@@ -101,7 +105,7 @@ export class UsersService {
   async findAll(role?: UserRole): Promise<UserProfileDto[]> {
     const users = await this.prisma.user.findMany({
       where: {
-        isActive: true,
+        accountStatus: 'ACTIVE',
         ...(role && { role }),
       },
       select: USER_SELECT,
@@ -159,7 +163,7 @@ export class UsersService {
 
     await this.prisma.user.update({
       where: { id: targetUserId },
-      data: { isActive: false },
+      data: { accountStatus: 'SUSPENDED' },
     });
 
     this.logger.log(`User deactivated: [${targetUserId}] by admin [${adminId}]`);

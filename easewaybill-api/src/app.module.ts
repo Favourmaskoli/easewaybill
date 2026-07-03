@@ -28,6 +28,8 @@ import { DisputesModule } from './modules/disputes/disputes.module';
 import { EscrowModule } from './modules/escrow/escrow.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PaystackIpMiddleware } from './modules/payments/paystack-ip.middleware';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -54,6 +56,13 @@ import { PaystackIpMiddleware } from './modules/payments/paystack-ip.middleware'
       }),
     }),
 
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      maxListeners: 20,
+      verboseMemoryLeak: true,
+    }),
+    NotificationsModule,
     PrismaModule,
     HealthModule,
     AuthModule,

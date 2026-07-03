@@ -1,115 +1,3 @@
-// import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-// import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-// import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-// import { RolesGuard } from '../../common/guards/roles.guard';
-// import { Roles } from '../../common/decorators/roles.decorator';
-// import { CurrentUser } from '../../common/decorators/current-user.decorator';
-// import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
-// import { OrdersService } from './orders.service';
-// import { CreateOrderDto } from './dto/create-order.dto';
-// import { FilterOrdersDto } from './dto/filter-orders.dto';
-// import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-// import { OrderResponseDto } from './dto/order-response.dto';
-// import type { PaginatedResult } from '../../common/dto/pagination.dto';
-
-// @ApiTags('orders')
-// @ApiBearerAuth('access-token')
-// @UseGuards(JwtAuthGuard, RolesGuard)
-// @Controller('orders')
-// export class OrdersController {
-//   constructor(private readonly ordersService: OrdersService) {}
-
-//   // ── POST /orders ─────────────────────────────────────────────────
-//   @Post()
-//   @Roles('SELLER' as any)
-//   @ApiOperation({ summary: '[SELLER] Create a new order with items and waybill' })
-//   @ApiResponse({ status: 201, type: OrderResponseDto })
-//   @ApiResponse({ status: 400, description: 'Validation error' })
-//   @ApiResponse({ status: 403, description: 'Forbidden — SELLER role required' })
-//   async create(
-//     @Body() dto: CreateOrderDto,
-//     @CurrentUser() user: AuthenticatedUser,
-//   ): Promise<OrderResponseDto> {
-//     return this.ordersService.create(dto, user);
-//   }
-
-//   // ── GET /orders ──────────────────────────────────────────────────
-//   @Get()
-//   @ApiOperation({
-//     summary: 'List orders — paginated and filterable by status',
-//     description:
-//       'SELLER sees own orders. BUYER sees purchased orders. RIDER sees assigned orders. ADMIN sees all.',
-//   })
-//   async findAll(
-//     @Query() query: FilterOrdersDto,
-//     @CurrentUser() user: AuthenticatedUser,
-//   ): Promise<PaginatedResult<OrderResponseDto>> {
-//     return this.ordersService.findAll(user, query);
-//   }
-
-//   // ── GET /orders/:id ──────────────────────────────────────────────
-//   @Get(':id')
-//   @ApiOperation({ summary: 'Get full order details by ID' })
-//   @ApiResponse({ status: 200, type: OrderResponseDto })
-//   @ApiResponse({ status: 404, description: 'Order not found' })
-//   async findOne(
-//     @Param('id') id: string,
-//     @CurrentUser() user: AuthenticatedUser,
-//   ): Promise<OrderResponseDto> {
-//     return this.ordersService.findOne(id, user);
-//   }
-
-//   // ── PATCH /orders/:id/status ─────────────────────────────────────
-//   @Patch(':id/status')
-//   @ApiOperation({
-//     summary: 'Update order status',
-//     description: `State machine transitions:
-// SELLER:  DRAFT → PENDING_BUYER | PAID → SHIPPED
-// BUYER:   PENDING_BUYER → AWAITING_PAYMENT | DELIVERED → COMPLETED | DELIVERED → DISPUTED
-// RIDER:   SHIPPED → IN_TRANSIT | IN_TRANSIT → DELIVERED
-// ADMIN:   AWAITING_PAYMENT → PAID | DISPUTED → COMPLETED | DISPUTED → REFUNDED | any → CANCELLED`,
-//   })
-//   @ApiResponse({ status: 200, type: OrderResponseDto })
-//   @ApiResponse({ status: 400, description: 'Invalid status transition' })
-//   @ApiResponse({ status: 403, description: 'Role not allowed for this transition' })
-//   @ApiResponse({ status: 404, description: 'Order not found' })
-//   async updateStatus(
-//     @Param('id') id: string,
-//     @Body() dto: UpdateOrderStatusDto,
-//     @CurrentUser() user: AuthenticatedUser,
-//   ): Promise<OrderResponseDto> {
-//     return this.ordersService.updateStatus(id, dto, user);
-//   }
-//   // ── POST /orders/:id/confirm ─────────────────────────────────────
-//   @Post(':id/confirm')
-//   @Roles('BUYER' as any)
-//   @ApiOperation({
-//     summary: '[BUYER] Confirm order details and link buyer to order',
-//     description:
-//       'Buyer confirms the order the seller created for them. Matches by buyerEmail. Moves status to AWAITING_PAYMENT.',
-//   })
-//   @ApiResponse({ status: 201, type: OrderResponseDto })
-//   @ApiResponse({ status: 400, description: 'Order not in PENDING_BUYER status' })
-//   @ApiResponse({ status: 404, description: 'Order not found or email mismatch' })
-//   async confirmByBuyer(
-//     @Param('id') id: string,
-//     @CurrentUser() user: AuthenticatedUser,
-//   ): Promise<OrderResponseDto> {
-//     return this.ordersService.confirmByBuyer(id, user);
-//   }
-//   @Post(':id/assign-rider')
-//   @Roles('ADMIN' as any)
-//   @ApiOperation({ summary: '[ADMIN] Assign a rider to a shipped order' })
-//   @ApiResponse({ status: 201, type: OrderResponseDto })
-//   async assignRider(
-//     @Param('id') id: string,
-//     @Body() body: { riderId: string },
-//     @CurrentUser() user: AuthenticatedUser,
-//   ): Promise<OrderResponseDto> {
-//     return this.ordersService.assignRider(id, body.riderId, user);
-//   }
-// }
-
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -139,19 +27,18 @@ import type { PaginatedResult } from '../../common/dto/pagination.dto';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // ── POST /orders ─────────────────────────────────────────────────
   @Post()
-  @Roles('SELLER' as any)
   @ApiOperation({
-    summary: '[SELLER] Create a new order',
+    summary: 'Create a new escrow order (any authenticated user)',
     description:
       'Creates an order with items and auto-generates a waybill atomically. ' +
+      'The authenticated user becomes the SELLER for this order. ' +
+      'Any user can create orders — the same user can be a buyer on other orders. ' +
       'Calculates platform fee (5%) and rider payout from delivery fee.',
   })
   @ApiResponse({ status: 201, type: OrderResponseDto, description: 'Order created successfully' })
   @ApiResponse({ status: 400, description: 'Validation error — check required fields' })
   @ApiResponse({ status: 401, description: 'Unauthorised — missing or invalid token' })
-  @ApiResponse({ status: 403, description: 'Forbidden — SELLER role required' })
   async create(
     @Body() dto: CreateOrderDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -212,7 +99,7 @@ export class OrdersController {
 
   // ── POST /orders/:id/confirm ─────────────────────────────────────
   @Post(':id/confirm')
-  @Roles('BUYER' as any)
+  // @Roles('BUYER' as any)
   @ApiOperation({
     summary: '[BUYER] Confirm order details and link buyer to order',
     description:
@@ -229,6 +116,9 @@ export class OrdersController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<OrderResponseDto> {
+    console.log('Controller reached');
+    console.log(id);
+    console.log(user);
     return this.ordersService.confirmByBuyer(id, user);
   }
 

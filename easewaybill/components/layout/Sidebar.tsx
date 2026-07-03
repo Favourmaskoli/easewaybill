@@ -3,7 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { X, ChevronRight } from "lucide-react";
-import { sidebarNavItems, isRouteActive } from "@/lib/navigation";
+import {
+  sidebarNavItems,
+  adminNavItems,
+  isRouteActive,
+  riderNavItems,
+} from "@/lib/navigation";
 import Logo from "@/components/layout/Logo";
 import UserProfileCard from "@/components/layout/UserProfileCard";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -34,8 +39,7 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
       {/* ── Backdrop Overlay ───────────────────────────────── */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-olive-950/40 backdrop-blur-sm
-                     z-20 lg:hidden"
+          className="fixed inset-0 bg-olive-950/40 backdrop-blur-sm z-20 lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -53,16 +57,11 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
         ].join(" ")}
         aria-label="Sidebar navigation"
       >
-        {/* ── Logo Header ────────────────────────────────────── */}
-        <div
-          className="flex items-center justify-between p-5
-                     border-b border-olive-500/25 shrink-0"
-        >
+        {/* ── Logo Header ──────────────────────────────────── */}
+        <div className="flex items-center justify-between p-5 border-b border-olive-500/25 shrink-0">
           <Logo />
           <button
-            className="lg:hidden p-2 rounded-xl transition-all duration-200
-                       text-cream-200 hover:text-cream-50
-                       hover:bg-olive-500/40"
+            className="lg:hidden p-2 rounded-xl transition-all duration-200 text-cream-200 hover:text-cream-50 hover:bg-olive-500/40"
             onClick={onClose}
             aria-label="Close navigation"
           >
@@ -70,7 +69,7 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
           </button>
         </div>
 
-        {/* ── Navigation Links ───────────────────────────────── */}
+        {/* ── Navigation Links ─────────────────────────────── */}
         <nav
           className="flex-1 p-4 space-y-1.5 overflow-y-auto scrollbar-hide"
           aria-label="Main navigation"
@@ -107,19 +106,101 @@ export default function Sidebar({ isOpen, onClose, pathname }: SidebarProps) {
               </Link>
             );
           })}
+
+          {/* ── Admin Nav — only visible to ADMIN role ──────── */}
+          {user?.role === "ADMIN" && (
+            <>
+              <div className="px-3 pt-4 pb-1">
+                <p className="text-[10px] text-olive-300 uppercase tracking-widest font-semibold">
+                  Admin
+                </p>
+              </div>
+              {adminNavItems.map((item) => {
+                const active = isRouteActive(item.href, pathname);
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={onClose}
+                    aria-current={active ? "page" : undefined}
+                    className={[
+                      "flex items-center gap-3 px-4 py-3 rounded-2xl",
+                      "font-semibold text-sm transition-all duration-200",
+                      active
+                        ? "bg-red-100 text-red-800 shadow-[var(--shadow-clay-md)]"
+                        : "text-red-300 hover:bg-red-500/20 hover:text-red-100",
+                    ].join(" ")}
+                  >
+                    <item.icon
+                      size={20}
+                      aria-hidden="true"
+                      className={active ? "text-red-600" : "text-red-400"}
+                    />
+                    <span className="flex-1">{item.label}</span>
+                    {active && (
+                      <ChevronRight
+                        size={15}
+                        className="text-red-400"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </Link>
+                );
+              })}
+            </>
+          )}
+          {/* ── Rider Nav — only visible to RIDER role ──────── */}
+          {user?.role === "RIDER" && (
+            <>
+              <div className="px-3 pt-4 pb-1">
+                <p className="text-[10px] text-olive-300 uppercase tracking-widest font-semibold">
+                  Rider
+                </p>
+              </div>
+              {riderNavItems.map((item) => {
+                const active = isRouteActive(item.href, pathname);
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={onClose}
+                    aria-current={active ? "page" : undefined}
+                    className={[
+                      "flex items-center gap-3 px-4 py-3 rounded-2xl",
+                      "font-semibold text-sm transition-all duration-200",
+                      active
+                        ? "bg-amber-100 text-amber-800 shadow-[var(--shadow-clay-md)]"
+                        : "text-amber-300 hover:bg-amber-500/20 hover:text-amber-100",
+                    ].join(" ")}
+                  >
+                    <item.icon
+                      size={20}
+                      aria-hidden="true"
+                      className={active ? "text-amber-600" : "text-amber-400"}
+                    />
+                    <span className="flex-1">{item.label}</span>
+                    {active && (
+                      <ChevronRight
+                        size={15}
+                        className="text-amber-400"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
-        {/* ── Section hint above user card ───────────────────── */}
+        {/* ── Section hint above user card ─────────────────── */}
         <div className="px-4 pb-2">
-          <p
-            className="text-[10px] text-olive-300 uppercase tracking-widest
-                        font-semibold px-3"
-          >
+          <p className="text-[10px] text-olive-300 uppercase tracking-widest font-semibold px-3">
             Account
           </p>
         </div>
 
-        {/* ── User Profile ───────────────────────────────────── */}
+        {/* ── User Profile ─────────────────────────────────── */}
         <UserProfileCard
           name={fullName}
           email={email}

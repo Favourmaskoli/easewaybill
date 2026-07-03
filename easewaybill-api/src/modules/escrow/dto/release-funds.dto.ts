@@ -17,4 +17,12 @@ export class ReleaseFundsDto {
   @IsString()
   @MaxLength(500)
   note?: string;
+
+  @ApiProperty({
+    example: 'RELEASE-cmpemln5i0000569kj79v3pv3-1697040000000',
+    description: 'Unique reference for this release transaction',
+  })
+  @IsString()
+  @IsNotEmpty()
+  declare reference: string;
 }

@@ -41,6 +41,7 @@ export interface Order {
   amount: string;
   status: string;
   statusColor: string;
+  buyerConfirmedAt: string | null;
   date: string;
 }
 
@@ -129,6 +130,7 @@ export const recentOrders: Order[] = [
     amount: "₦850,000",
     status: "In Transit",
     statusColor: "bg-amber-100 text-amber-700",
+    buyerConfirmedAt: null,
     date: "Apr 7, 2026",
   },
   {
@@ -138,6 +140,7 @@ export const recentOrders: Order[] = [
     amount: "₦320,000",
     status: "Awaiting Payment",
     statusColor: "bg-yellow-100 text-yellow-700",
+    buyerConfirmedAt: null,
     date: "Apr 6, 2026",
   },
   {
@@ -146,6 +149,7 @@ export const recentOrders: Order[] = [
     buyer: "Fatima Bello",
     amount: "₦1,100,000",
     status: "Completed",
+    buyerConfirmedAt: "2026-04-05T10:15:00Z",
     statusColor: "bg-olive-100 text-olive-700",
     date: "Apr 5, 2026",
   },
@@ -155,6 +159,7 @@ export const recentOrders: Order[] = [
     buyer: "Tunde Adeola",
     amount: "₦450,000",
     status: "Disputed",
+    buyerConfirmedAt: null,
     statusColor: "bg-red-100 text-red-700",
     date: "Apr 4, 2026",
   },
@@ -164,6 +169,7 @@ export const recentOrders: Order[] = [
     buyer: "Chinyere Uzo",
     amount: "₦45,000",
     status: "Completed",
+    buyerConfirmedAt: "2026-04-03T10:15:00Z",
     statusColor: "bg-olive-100 text-olive-700",
     date: "Apr 3, 2026",
   },
@@ -172,10 +178,34 @@ export const recentOrders: Order[] = [
 // ── Order Status Bars (Desktop Widget) ────────────────────────
 
 export const statusBars: StatusBar[] = [
-  { label: "Awaiting Payment", count: 3, dotColor: "bg-yellow-400", barColor: "bg-yellow-400", width: "25%" },
-  { label: "In Transit", count: 8, dotColor: "bg-amber-400", barColor: "bg-amber-400", width: "60%" },
-  { label: "Completed", count: 16, dotColor: "bg-olive-500", barColor: "bg-olive-500", width: "80%" },
-  { label: "Disputed", count: 1, dotColor: "bg-red-500", barColor: "bg-red-500", width: "8%" },
+  {
+    label: "Awaiting Payment",
+    count: 3,
+    dotColor: "bg-yellow-400",
+    barColor: "bg-yellow-400",
+    width: "25%",
+  },
+  {
+    label: "In Transit",
+    count: 8,
+    dotColor: "bg-amber-400",
+    barColor: "bg-amber-400",
+    width: "60%",
+  },
+  {
+    label: "Completed",
+    count: 16,
+    dotColor: "bg-olive-500",
+    barColor: "bg-olive-500",
+    width: "80%",
+  },
+  {
+    label: "Disputed",
+    count: 1,
+    dotColor: "bg-red-500",
+    barColor: "bg-red-500",
+    width: "8%",
+  },
 ];
 
 // ── Pending Actions ───────────────────────────────────────────
