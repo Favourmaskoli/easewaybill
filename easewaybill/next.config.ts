@@ -4,11 +4,23 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "10.125.228.136",
     "172.25.152.136",
-    "10.104.19.136",
-    "10.47.59.136",
-    "10.162.47.136",
+    "10.161.32.136",
     "unhemmed-semioratorically-elli.ngrok-free.dev",
   ],
+  async redirects() {
+    return [
+      {
+        source: "/terms",
+        destination: "/legal/terms-and-conditions",
+        permanent: true,
+      },
+      {
+        source: "/privacy",
+        destination: "/legal/privacy-policy",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

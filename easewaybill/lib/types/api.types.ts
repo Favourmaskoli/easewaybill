@@ -28,6 +28,7 @@ export interface AuthTokens {
 export interface LoginDto {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterDto {
@@ -36,9 +37,19 @@ export interface RegisterDto {
   email: string;
   password: string;
   phone?: string;
+  acceptedTerms: boolean;
   // role is intentionally omitted — backend defaults to USER
   // role does NOT restrict permissions. Any user can act as user or rider
   // depending on which orders they create vs which orders they pay for.
+}
+
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+export interface ResetPasswordDto {
+  token: string;
+  newPassword: string;
 }
 
 // ── API Response wrapper ──────────────────────────────────────
@@ -110,6 +121,14 @@ export interface OrderWaybill {
   generatedAt: string;
 }
 
+export interface OrderImageSummary {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+}
+
 export interface Order {
   id: string;
   trackingCode: string;
@@ -121,9 +140,12 @@ export interface Order {
   pickupAddress: string;
   pickupLat?: string | null;
   pickupLng?: string | null;
+  pickupMapboxId?: string | null;
   deliveryAddress: string;
   deliveryLat?: string | null;
   deliveryLng?: string | null;
+  deliveryMapboxId?: string | null;
+  addressVerificationRequired?: boolean;
   buyerEmail: string;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -141,6 +163,7 @@ export interface Order {
   rider?: OrderParty | null;
   items: OrderItem[];
   waybills: OrderWaybill[];
+  images?: OrderImageSummary[];
   paidAt?: string | null;
   shippedAt?: string | null;
   pickedUpAt?: string | null;
@@ -158,7 +181,13 @@ export interface Order {
 export interface CreateOrderDto {
   description: string;
   pickupAddress: string;
+  pickupLat?: number;
+  pickupLng?: number;
+  pickupMapboxId?: string;
   deliveryAddress: string;
+  deliveryLat?: number;
+  deliveryLng?: number;
+  deliveryMapboxId?: string;
   buyerEmail: string;
   buyerName?: string;
   buyerPhone?: string;
@@ -239,25 +268,98 @@ export interface AuditLog {
 
 // ── Notifications ─────────────────────────────────────────────
 
+// export interface Notification {
+//   id: string;
+//   userId: string;
+//   orderId?: string | null;
+//   type: string;
+//   channel: string;
+//   title: string;
+//   body: string;
+//   isRead: boolean;
+//   readAt?: string | null;
+//   createdAt: string;
+// }
+
+// export interface NotificationList {
+//   notifications: Notification[];
+//   total: number;
+//   unreadCount: number;
+//   hasNextPage: boolean;
+//   nextCursor?: string | null;
+// }
+
+// ── Dispute ───────────────────────────────────────────────────────
+export interface Dispute {
+  id: string;
+  orderId: string;
+  raisedById: string;
+  reason: string;
+  description: string | null;
+  status: string;
+  resolvedById: string | null;
+  resolution: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  order?: {
+    id: string;
+    trackingCode: string;
+    status: string;
+    totalAmount: string;
+    buyerId: string | null;
+    sellerId: string;
+    seller?: { firstName: string; lastName: string; email: string };
+    buyer?: { firstName: string; lastName: string; email: string };
+  };
+  raisedBy?: { firstName: string; lastName: string; email: string };
+}
+
+// ── Must match backend RaiseDisputeDto enum exactly ───────────────
+export const DISPUTE_REASONS: { value: string; label: string }[] = [
+  { value: "ITEM_NOT_RECEIVED", label: "Item not received" },
+  { value: "ITEM_DAMAGED", label: "Item received but damaged" },
+  { value: "ITEM_NOT_AS_DESCRIBED", label: "Item not as described" },
+  { value: "WRONG_ITEM_SENT", label: "Wrong item delivered" },
+  { value: "SELLER_NOT_SHIPPING", label: "Seller not shipping" },
+  { value: "OTHER", label: "Other" },
+];
+
+// ── Notification ──────────────────────────────────────────────────
 export interface Notification {
   id: string;
   userId: string;
-  orderId?: string | null;
+  orderId: string | null;
   type: string;
   channel: string;
   title: string;
   body: string;
   isRead: boolean;
-  readAt?: string | null;
+  readAt: string | null;
   createdAt: string;
+  order?: {
+    id: string;
+    trackingCode: string;
+    status: string;
+  } | null;
 }
 
-export interface NotificationList {
+export interface NotificationListResponse {
   notifications: Notification[];
   total: number;
   unreadCount: number;
   hasNextPage: boolean;
-  nextCursor?: string | null;
+  nextCursor: string | null;
+}
+
+export interface RaiseDisputeDto {
+  reason: string;
+  description?: string;
+}
+
+export interface RaiseDisputeDto {
+  reason: string;
+  description?: string;
 }
 
 // ── Waybill ───────────────────────────────────────────────────
@@ -317,4 +419,47 @@ export interface AdminDashboard {
   openDisputes: number;
   resolvedDisputes: number;
   generatedAt: string;
+}
+
+// ── OrderMessage ──────────────────────────────────────────────────
+export interface MessageSender {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+export interface OrderMessage {
+  id: string;
+  orderId: string;
+  body: string;
+  createdAt: string;
+  sender: MessageSender;
+}
+
+export interface MessageListResponse {
+  messages: OrderMessage[];
+  total: number;
+  hasNextPage: boolean;
+  nextCursor: string | null;
+}
+
+export interface TrackingTimelineEntry {
+  status: string;
+  note: string | null;
+  location: string | null;
+  createdAt: string;
+}
+
+export interface TrackWaybillResponse {
+  waybillNumber: string;
+  waybillStatus: string;
+  orderStatus: string;
+  trackingCode: string;
+  description: string;
+  pickupAddress: string;
+  deliveryAddress: string;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+  timeline: TrackingTimelineEntry[];
 }

@@ -4,7 +4,7 @@
 // import type {
 //   CreateRiderDto,
 //   PromoteUserDto,
-//   CreateAdminDto 
+//   CreateAdminDto
 // } from './dto/admin-user.dto';
 
 // import type {
@@ -556,12 +556,7 @@
 //   }
 // }
 
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 import type { CreateRiderDto, PromoteUserDto, CreateAdminDto } from './dto/admin-user.dto';
@@ -573,6 +568,7 @@ import type {
 } from './dto/admin-stats.dto';
 import type { PaginatedResult } from '../../common/dto/pagination.dto';
 import { paginate } from '../../common/dto/pagination.dto';
+import bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
@@ -624,29 +620,34 @@ export class AdminService {
     ]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userMap = userCounts.reduce((acc: Record<string, number>, r: any) => {
-      acc[r.role] = r._count.id;
-      return acc;
-    }, {} as Record<string, number>);
+    const userMap = userCounts.reduce(
+      (acc: Record<string, number>, r: any) => {
+        acc[r.role] = r._count.id;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orderMap = orderCounts.reduce((acc: Record<string, number>, r: any) => {
-      acc[r.status] = r._count.id;
-      return acc;
-    }, {} as Record<string, number>);
+    const orderMap = orderCounts.reduce(
+      (acc: Record<string, number>, r: any) => {
+        acc[r.status] = r._count.id;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const disputeMap = disputeCounts.reduce((acc: Record<string, number>, r: any) => {
-      acc[r.status] = r._count.id;
-      return acc;
-    }, {} as Record<string, number>);
+    const disputeMap = disputeCounts.reduce(
+      (acc: Record<string, number>, r: any) => {
+        acc[r.status] = r._count.id;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
-    const totalOrders = Object.values(orderMap).reduce(
-      (sum: number, v) => sum + (v as number), 0,
-    );
-    const openDisputes = ['OPEN', 'UNDER_REVIEW'].reduce(
-      (sum, s) => sum + (disputeMap[s] ?? 0), 0,
-    );
+    const totalOrders = Object.values(orderMap).reduce((sum: number, v) => sum + (v as number), 0);
+    const openDisputes = ['OPEN', 'UNDER_REVIEW'].reduce((sum, s) => sum + (disputeMap[s] ?? 0), 0);
     const resolvedDisputes =
       (disputeMap['RESOLVED_FOR_BUYER'] ?? 0) +
       (disputeMap['RESOLVED_FOR_SELLER'] ?? 0) +
@@ -655,8 +656,8 @@ export class AdminService {
     return {
       // ✅ Updated: USER replaces SELLER/BUYER after migration
       totalUsers: Object.values(userMap).reduce((sum: number, v) => sum + (v as number), 0),
-      totalSellers: userMap['USER'] ?? 0,   // kept as totalSellers for DTO compat
-      totalBuyers: userMap['USER'] ?? 0,    // same — USER is now the base role
+      totalSellers: userMap['USER'] ?? 0, // kept as totalSellers for DTO compat
+      totalBuyers: userMap['USER'] ?? 0, // same — USER is now the base role
       totalRiders: userMap['RIDER'] ?? 0,
       totalOrders,
       ordersDraft: orderMap['DRAFT'] ?? 0,
@@ -710,7 +711,7 @@ export class AdminService {
           lastName: true,
           phone: true,
           role: true,
-          accountStatus: true,       // ✅ was isActive
+          accountStatus: true, // ✅ was isActive
           isEmailVerified: true,
           createdAt: true,
           _count: {
@@ -823,20 +824,15 @@ export class AdminService {
   }
 
   // ── POST /admin/users/create-rider ────────────────────────────────
-  async createRider(
-    dto: CreateRiderDto,
-    adminId: string,
-  ): Promise<AdminUserDto> {
+  async createRider(dto: CreateRiderDto, adminId: string): Promise<AdminUserDto> {
     const exists = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
     if (exists) {
-      throw new BadRequestException(
-        `A user with email ${dto.email} already exists`,
-      );
+      throw new BadRequestException(`A user with email ${dto.email} already exists`);
     }
 
-    const bcrypt = await import('bcrypt');
+    // const bcrypt = await import('bcrypt');
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     // ✅ use passwordHash not password (check your schema field name)
@@ -845,8 +841,8 @@ export class AdminService {
         email: dto.email,
         firstName: dto.firstName,
         lastName: dto.lastName,
-        passwordHash: hashedPassword,  // ← use whichever field your schema has
-        phone: dto.phoneNumber,        // ← your schema uses `phone` not `phoneNumber`
+        passwordHash: hashedPassword, // ← use whichever field your schema has
+        phone: dto.phoneNumber, // ← your schema uses `phone` not `phoneNumber`
         vehicleType: dto.vehicleType,
         vehiclePlate: dto.vehiclePlate,
         role: 'RIDER',
@@ -871,28 +867,21 @@ export class AdminService {
       },
     });
 
-    this.logger.log(
-      `Rider account created: ${rider.email} by admin [${adminId}]`,
-    );
+    this.logger.log(`Rider account created: ${rider.email} by admin [${adminId}]`);
 
     return this.formatUser(rider);
   }
 
   // ── POST /admin/users/create-admin ────────────────────────────────
-  async createAdmin(
-    dto: CreateAdminDto,
-    adminId: string,
-  ): Promise<AdminUserDto> {
+  async createAdmin(dto: CreateAdminDto, adminId: string): Promise<AdminUserDto> {
     const exists = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
     if (exists) {
-      throw new BadRequestException(
-        `A user with email ${dto.email} already exists`,
-      );
+      throw new BadRequestException(`A user with email ${dto.email} already exists`);
     }
 
-    const bcrypt = await import('bcrypt');
+    // const bcrypt = await import('bcrypt');
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const admin = await (this.prisma.user.create as any)({
@@ -900,8 +889,8 @@ export class AdminService {
         email: dto.email,
         firstName: dto.firstName,
         lastName: dto.lastName,
-        passwordHash: hashedPassword,  // ← match your schema field name
-        phone: dto.phoneNumber,        // ← your schema uses `phone` not `phoneNumber`
+        passwordHash: hashedPassword, // ← match your schema field name
+        phone: dto.phoneNumber, // ← your schema uses `phone` not `phoneNumber`
         role: 'ADMIN',
         accountStatus: 'ACTIVE',
       },
@@ -924,9 +913,7 @@ export class AdminService {
       },
     });
 
-    this.logger.log(
-      `Admin account created: ${admin.email} by admin [${adminId}]`,
-    );
+    this.logger.log(`Admin account created: ${admin.email} by admin [${adminId}]`);
 
     return this.formatUser(admin);
   }
@@ -953,9 +940,7 @@ export class AdminService {
         where: { role: 'ADMIN' },
       });
       if (adminCount <= 1) {
-        throw new BadRequestException(
-          'Cannot demote the last remaining admin in the system',
-        );
+        throw new BadRequestException('Cannot demote the last remaining admin in the system');
       }
     }
 
@@ -981,9 +966,7 @@ export class AdminService {
       },
     });
 
-    this.logger.log(
-      `User ${user.email} role: ${user.role} → ${dto.role} by admin [${adminId}]`,
-    );
+    this.logger.log(`User ${user.email} role: ${user.role} → ${dto.role} by admin [${adminId}]`);
 
     return this.formatUser(updated);
   }
@@ -1049,11 +1032,7 @@ export class AdminService {
       createdAt: t.createdAt,
     }));
 
-    return paginate(
-      formatted as (AdminEscrowLedgerDto & { id: string })[],
-      total,
-      limit,
-    );
+    return paginate(formatted as (AdminEscrowLedgerDto & { id: string })[], total, limit);
   }
 
   // ── GET /admin/disputes ───────────────────────────────────────────
@@ -1107,10 +1086,6 @@ export class AdminService {
       createdAt: d.createdAt,
     }));
 
-    return paginate(
-      formatted as (AdminDisputeDto & { id: string })[],
-      total,
-      limit,
-    );
+    return paginate(formatted as (AdminDisputeDto & { id: string })[], total, limit);
   }
 }

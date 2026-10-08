@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,22 +12,22 @@ datasource db {
 
 enum UserRole {
   USER
-  RIDER     // delivers goods from seller to buyer
-  ADMIN     // platform management, dispute resolution
+  RIDER // delivers goods from seller to buyer
+  ADMIN // platform management, dispute resolution
 }
 
 enum OrderStatus {
-  DRAFT               // seller created, not yet sent to buyer
-  PENDING_BUYER       // waiting for buyer to confirm order details
-  AWAITING_PAYMENT    // buyer confirmed, waiting for payment
-  PAID                // escrow funded, seller can now ship
-  SHIPPED             // seller handed goods to rider
-  IN_TRANSIT          // rider picked up, en route to buyer
-  DELIVERED           // rider delivered to buyer
-  COMPLETED           // buyer confirmed satisfaction, funds released
-  DISPUTED            // dispute raised by buyer or seller
-  CANCELLED           // cancelled before payment
-  REFUNDED            // buyer refunded after dispute resolution
+  DRAFT // seller created, not yet sent to buyer
+  PENDING_BUYER // waiting for buyer to confirm order details
+  AWAITING_PAYMENT // buyer confirmed, waiting for payment
+  PAID // escrow funded, seller can now ship
+  SHIPPED // seller handed goods to rider
+  IN_TRANSIT // rider picked up, en route to buyer
+  DELIVERED // rider delivered to buyer
+  COMPLETED // buyer confirmed satisfaction, funds released
+  DISPUTED // dispute raised by buyer or seller
+  CANCELLED // cancelled before payment
+  REFUNDED // buyer refunded after dispute resolution
 }
 
 enum WaybillStatus {
@@ -39,12 +38,12 @@ enum WaybillStatus {
 }
 
 enum EscrowStatus {
-  PENDING             // payment not yet made
-  HOLDING             // funds confirmed and locked in escrow
-  PARTIALLY_RELEASED  // partial release (future: milestone payments)
-  RELEASED            // full amount released to seller
-  REFUNDED            // full amount returned to buyer
-  DISPUTED            // frozen during active dispute
+  PENDING // payment not yet made
+  HOLDING // funds confirmed and locked in escrow
+  PARTIALLY_RELEASED // partial release (future: milestone payments)
+  RELEASED // full amount released to seller
+  REFUNDED // full amount returned to buyer
+  DISPUTED // frozen during active dispute
 }
 
 enum PaymentStatus {
@@ -55,37 +54,37 @@ enum PaymentStatus {
 }
 
 enum TransactionType {
-  ESCROW_HOLD         // buyer pays in — funds locked
-  PARTIAL_RELEASE     // partial release to seller
-  FULL_RELEASE        // buyer confirms satisfaction — seller paid
-  REFUND              // dispute resolved for buyer — buyer refunded
-  DISPUTE_HOLD        // funds frozen during dispute
-  DISPUTE_RESOLUTION  // admin resolves dispute
-  PLATFORM_FEE        // platform commission deducted
+  ESCROW_HOLD // buyer pays in — funds locked
+  PARTIAL_RELEASE // partial release to seller
+  FULL_RELEASE // buyer confirms satisfaction — seller paid
+  REFUND // dispute resolved for buyer — buyer refunded
+  DISPUTE_HOLD // funds frozen during dispute
+  DISPUTE_RESOLUTION // admin resolves dispute
+  PLATFORM_FEE // platform commission deducted
 }
 
 enum NotificationType {
-  ORDER_CREATED           // seller created order
-  ORDER_SENT_TO_BUYER     // buyer notified to confirm
-  ORDER_CONFIRMED_BUYER   // buyer confirmed order details
-  ORDER_PAYMENT_PENDING   // buyer yet to pay
-  ORDER_PAID              // escrow funded
-  ORDER_SHIPPED           // seller shipped goods
-  ORDER_PICKED_UP         // rider picked up goods
-  ORDER_IN_TRANSIT        // rider en route
-  ORDER_DELIVERED         // rider delivered to buyer
-  ORDER_COMPLETED         // buyer confirmed satisfaction
-  ORDER_CANCELLED         // order cancelled
-  ORDER_DISPUTED          // dispute raised
-  ESCROW_FUNDED           // payment confirmed in escrow
-  ESCROW_RELEASED         // funds released to seller
-  ESCROW_REFUNDED         // funds returned to buyer
-  PAYMENT_SUCCESS         // Paystack payment confirmed
-  PAYMENT_FAILED          // Paystack payment failed
-  WAYBILL_GENERATED       // waybill created
-  DISPUTE_OPENED          // dispute created
-  DISPUTE_RESOLVED        // admin resolved dispute
-  ACCOUNT_VERIFIED        // email/identity verified
+  ORDER_CREATED // seller created order
+  ORDER_SENT_TO_BUYER // buyer notified to confirm
+  ORDER_CONFIRMED_BUYER // buyer confirmed order details
+  ORDER_PAYMENT_PENDING // buyer yet to pay
+  ORDER_PAID // escrow funded
+  ORDER_SHIPPED // seller shipped goods
+  ORDER_PICKED_UP // rider picked up goods
+  ORDER_IN_TRANSIT // rider en route
+  ORDER_DELIVERED // rider delivered to buyer
+  ORDER_COMPLETED // buyer confirmed satisfaction
+  ORDER_CANCELLED // order cancelled
+  ORDER_DISPUTED // dispute raised
+  ESCROW_FUNDED // payment confirmed in escrow
+  ESCROW_RELEASED // funds released to seller
+  ESCROW_REFUNDED // funds returned to buyer
+  PAYMENT_SUCCESS // Paystack payment confirmed
+  PAYMENT_FAILED // Paystack payment failed
+  WAYBILL_GENERATED // waybill created
+  DISPUTE_OPENED // dispute created
+  DISPUTE_RESOLVED // admin resolved dispute
+  ACCOUNT_VERIFIED // email/identity verified
   GENERAL
 }
 
@@ -123,44 +122,53 @@ enum AccountStatus {
 // ─────────────────────────────────────────────────────────────────
 
 model User {
-  id                    String    @id @default(cuid())
-  email                 String    @unique
-  passwordHash          String
-  firstName             String
-  lastName              String
-  phone                 String?
-  role                  UserRole  @default(USER)
-  isEmailVerified       Boolean   @default(false)
-  accountStatus AccountStatus @default(ACTIVE)
-  avatarUrl             String?
+  id              String        @id @default(cuid())
+  email           String        @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  phone           String?
+  role            UserRole      @default(USER)
+  isEmailVerified Boolean       @default(false)
+  termsAcceptedAt DateTime?
+  termsVersion    String?
+  accountStatus   AccountStatus @default(ACTIVE)
+  avatarUrl       String?
 
   // Auth
   refreshToken          String?
   refreshTokenExpiresAt DateTime?
 
   // Seller-specific — for Paystack transfer (payout)
-  businessName          String?
-  bankAccountName       String?
-  bankAccountNumber     String?
-  bankCode              String?   // Paystack bank code
+  businessName      String?
+  bankAccountName   String?
+  bankAccountNumber String?
+  bankCode          String? // Paystack bank code
 
   // Rider-specific
-  vehicleType           String?
-  vehiclePlate          String?
-  isAvailable           Boolean   @default(false)
+  vehicleType  String?
+  vehiclePlate String?
+  isAvailable  Boolean @default(false)
 
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  ordersAsSeller        Order[]             @relation("SellerOrders")
-  ordersAsBuyer         Order[]             @relation("BuyerOrders")
-  ordersAsRider         Order[]             @relation("RiderOrders")
-  notifications         Notification[]
-  escrowTransactions    EscrowTransaction[] @relation("TransactionActor")
-  disputesRaised        Dispute[]           @relation("DisputeRaisedBy")
-  disputesResolved      Dispute[]           @relation("DisputeResolvedBy")
-  transferRecipient TransferRecipient?
+  ordersAsSeller     Order[]             @relation("SellerOrders")
+  ordersAsBuyer      Order[]             @relation("BuyerOrders")
+  ordersAsRider      Order[]             @relation("RiderOrders")
+  notifications      Notification[]
+  escrowTransactions EscrowTransaction[] @relation("TransactionActor")
+  disputesRaised     Dispute[]           @relation("DisputeRaisedBy")
+  disputesResolved   Dispute[]           @relation("DisputeResolvedBy")
+  transferRecipient  TransferRecipient?
+  sentMessages       OrderMessage[]      @relation("SentMessages")
+
+  scannedWaybillEvents WaybillEvent[] @relation("WaybillEventScannedBy")
+
+  // password reset
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
 
   @@index([email])
   @@index([role])
@@ -173,68 +181,72 @@ model User {
 // ─────────────────────────────────────────────────────────────────
 
 model Order {
-  id               String       @id @default(cuid())
-  trackingCode     String       @unique
+  id           String @id @default(cuid())
+  trackingCode String @unique
 
-  status           OrderStatus  @default(DRAFT)
-  description      String
-  weight           Decimal?     @db.Decimal(8, 2)
-  dimensions       String?
-  fragile          Boolean      @default(false)
+  status      OrderStatus @default(DRAFT)
+  description String
+  weight      Decimal?    @db.Decimal(8, 2)
+  dimensions  String?
+  fragile     Boolean     @default(false)
 
   // Pickup (seller's address / warehouse)
-  pickupAddress    String
-  pickupLat        Decimal?     @db.Decimal(10, 7)
-  pickupLng        Decimal?     @db.Decimal(10, 7)
+  pickupAddress  String
+  pickupLat      Decimal? @db.Decimal(10, 7)
+  pickupLng      Decimal? @db.Decimal(10, 7)
+  pickupMapboxId String?
 
   // Delivery (buyer's address)
-  deliveryAddress  String
-  deliveryLat      Decimal?     @db.Decimal(10, 7)
-  deliveryLng      Decimal?     @db.Decimal(10, 7)
+  deliveryAddress             String
+  deliveryLat                 Decimal? @db.Decimal(10, 7)
+  deliveryLng                 Decimal? @db.Decimal(10, 7)
+  deliveryMapboxId            String?
+  addressVerificationRequired Boolean  @default(false)
 
   // Buyer info (may be pre-filled before buyer registers)
-  buyerEmail       String       // used to notify buyer
-  buyerName        String?      // filled from profile once buyer confirms
-  buyerPhone       String?
+  buyerEmail String // used to notify buyer
+  buyerName  String? // filled from profile once buyer confirms
+  buyerPhone String?
 
   // Financials — agreed between buyer and seller
-  itemPrice        Decimal      @db.Decimal(12, 2)  // price of goods
-  deliveryFee      Decimal      @default(0) @db.Decimal(12, 2)  // shipping cost
-  totalAmount      Decimal      @db.Decimal(12, 2)  // itemPrice + deliveryFee
-  platformFee      Decimal      @default(0) @db.Decimal(12, 2)  // EaseWaybill commission
-  sellerPayout     Decimal      @default(0) @db.Decimal(12, 2)  // totalAmount - platformFee
-  riderPayout      Decimal      @default(0) @db.Decimal(12, 2)  // delivery fee portion
+  itemPrice    Decimal @db.Decimal(12, 2) // price of goods
+  deliveryFee  Decimal @default(0) @db.Decimal(12, 2) // shipping cost
+  totalAmount  Decimal @db.Decimal(12, 2) // itemPrice + deliveryFee
+  platformFee  Decimal @default(0) @db.Decimal(12, 2) // EaseWaybill commission
+  sellerPayout Decimal @default(0) @db.Decimal(12, 2) // totalAmount - platformFee
+  riderPayout  Decimal @default(0) @db.Decimal(12, 2) // delivery fee portion
 
   // Escrow
-  escrowStatus     EscrowStatus @default(PENDING)
+  escrowStatus EscrowStatus @default(PENDING)
 
   // Participants
-  sellerId         String
-  seller           User         @relation("SellerOrders", fields: [sellerId], references: [id])
+  sellerId String
+  seller   User   @relation("SellerOrders", fields: [sellerId], references: [id])
 
-  buyerId          String?      // null until buyer confirms and registers/logs in
-  buyer            User?        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  buyerId String? // null until buyer confirms and registers/logs in
+  buyer   User?   @relation("BuyerOrders", fields: [buyerId], references: [id])
 
-  riderId          String?      // null until seller ships
-  rider            User?        @relation("RiderOrders", fields: [riderId], references: [id])
+  riderId String? // null until seller ships
+  rider   User?   @relation("RiderOrders", fields: [riderId], references: [id])
 
   transferRecords TransferRecord[]
 
+  messages OrderMessage[]
+
   // Timestamps for each state transition
-  sentToBuyerAt        DateTime?  // seller sent to buyer for confirmation
-  buyerConfirmedAt     DateTime?  // buyer confirmed order details
-  paidAt               DateTime?  // escrow funded
-  shippedAt            DateTime?  // seller handed to rider
-  pickedUpAt           DateTime?  // rider picked up
-  deliveredAt          DateTime?  // rider delivered to buyer
-  completedAt          DateTime?  // buyer confirmed satisfaction
-  cancelledAt          DateTime?
-  disputedAt           DateTime?
-  refundedAt           DateTime?
+  sentToBuyerAt    DateTime? // seller sent to buyer for confirmation
+  buyerConfirmedAt DateTime? // buyer confirmed order details
+  paidAt           DateTime? // escrow funded
+  shippedAt        DateTime? // seller handed to rider
+  pickedUpAt       DateTime? // rider picked up
+  deliveredAt      DateTime? // rider delivered to buyer
+  completedAt      DateTime? // buyer confirmed satisfaction
+  cancelledAt      DateTime?
+  disputedAt       DateTime?
+  refundedAt       DateTime?
 
-
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   items              OrderItem[]
@@ -242,7 +254,8 @@ model Order {
   escrowTransactions EscrowTransaction[]
   notifications      Notification[]
   dispute            Dispute?
-  paymentRecords PaymentRecord[]
+  paymentRecords     PaymentRecord[]
+  images             OrderImage[]
 
   @@index([trackingCode])
   @@index([sellerId])
@@ -255,24 +268,38 @@ model Order {
   @@map("orders")
 }
 
+model OrderImage {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fileName  String
+  mimeType  String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@map("order_images")
+}
+
 // ─────────────────────────────────────────────────────────────────
 // ORDER ITEM
 // ─────────────────────────────────────────────────────────────────
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   name        String
   description String?
   quantity    Int      @default(1)
-  unitPrice   Decimal? @db.Decimal(12, 2)  // price per unit
+  unitPrice   Decimal? @db.Decimal(12, 2) // price per unit
   weight      Decimal? @db.Decimal(8, 2)
   fragile     Boolean  @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@map("order_items")
@@ -283,37 +310,37 @@ model OrderItem {
 // ─────────────────────────────────────────────────────────────────
 
 model Waybill {
-  id              String        @id @default(cuid())
-  waybillNumber   String        @unique
-  status          WaybillStatus @default(GENERATED)
+  id            String        @id @default(cuid())
+  waybillNumber String        @unique
+  status        WaybillStatus @default(GENERATED)
 
-  orderId         String
-  order           Order         @relation(fields: [orderId], references: [id])
-  events        WaybillEvent[]
+  orderId String
+  order   Order          @relation(fields: [orderId], references: [id])
+  events  WaybillEvent[]
 
   // Denormalised snapshot — stable even if addresses/names change later
-  sellerName      String
-  sellerPhone     String
-  sellerAddress   String
-  buyerName       String
-  buyerPhone      String
-  buyerAddress    String
-  description     String
-  weight          Decimal?      @db.Decimal(8, 2)
-  dimensions      String?
-  declaredValue   Decimal?      @db.Decimal(12, 2)
-  fragile         Boolean       @default(false)
-  notes           String?
+  sellerName    String
+  sellerPhone   String
+  sellerAddress String
+  buyerName     String
+  buyerPhone    String
+  buyerAddress  String
+  description   String
+  weight        Decimal? @db.Decimal(8, 2)
+  dimensions    String?
+  declaredValue Decimal? @db.Decimal(12, 2)
+  fragile       Boolean  @default(false)
+  notes         String?
 
-  pdfUrl          String?       // Cloudinary/S3 URL after generation
+  pdfUrl String? // Cloudinary/S3 URL after generation
 
-  generatedAt     DateTime      @default(now())
-  printedAt       DateTime?
-  voidedAt        DateTime?
-  voidReason      String?
+  generatedAt DateTime  @default(now())
+  printedAt   DateTime?
+  voidedAt    DateTime?
+  voidReason  String?
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@index([waybillNumber])
@@ -325,20 +352,42 @@ model Waybill {
 // WAYBILL EVENT (tracking timeline)
 // ─────────────────────────────────────────────────────────────────
 
+// model WaybillEvent {
+//   id           String   @id @default(cuid())
+
+//   waybillId    String
+//   waybill      Waybill  @relation(fields: [waybillId], references: [id])
+
+//   status       String
+//   note         String?
+//   location     String?
+//   lat          Decimal? @db.Decimal(10, 7)
+//   lng          Decimal? @db.Decimal(10, 7)
+//   scannedById  String?
+
+//   createdAt    DateTime @default(now())
+
+//   @@index([waybillId])
+//   @@index([createdAt])
+//   @@map("waybill_events")
+// }
+
 model WaybillEvent {
-  id           String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  waybillId    String
-  waybill      Waybill  @relation(fields: [waybillId], references: [id])
+  waybillId String
+  waybill   Waybill @relation(fields: [waybillId], references: [id])
 
-  status       String
-  note         String?
-  location     String?
-  lat          Decimal? @db.Decimal(10, 7)
-  lng          Decimal? @db.Decimal(10, 7)
-  scannedById  String?
+  status   String
+  note     String?
+  location String?
+  lat      Decimal? @db.Decimal(10, 7)
+  lng      Decimal? @db.Decimal(10, 7)
 
-  createdAt    DateTime @default(now())
+  scannedById String?
+  scannedBy   User?   @relation("WaybillEventScannedBy", fields: [scannedById], references: [id])
+
+  createdAt DateTime @default(now())
 
   @@index([waybillId])
   @@index([createdAt])
@@ -350,30 +399,30 @@ model WaybillEvent {
 // ─────────────────────────────────────────────────────────────────
 
 model EscrowTransaction {
-  id               String          @id @default(cuid())
+  id String @id @default(cuid())
 
-  orderId          String
-  order            Order           @relation(fields: [orderId], references: [id])
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
 
-  type             TransactionType
-  paymentStatus    PaymentStatus   @default(PENDING)
+  type          TransactionType
+  paymentStatus PaymentStatus   @default(PENDING)
 
-  amount           Decimal         @db.Decimal(12, 2)
-  currency         String          @default("NGN")
-  reference        String          @unique   // internal reference
-  paystackRef      String?                   // Paystack transaction reference
-  paystackResponse Json?                     // raw Paystack webhook payload
+  amount           Decimal @db.Decimal(12, 2)
+  currency         String  @default("NGN")
+  reference        String  @unique // internal reference
+  paystackRef      String? // Paystack transaction reference
+  paystackResponse Json? // raw Paystack webhook payload
 
   // Who triggered this transaction
-  actorId          String?
-  actor            User?           @relation("TransactionActor", fields: [actorId], references: [id])
+  actorId String?
+  actor   User?   @relation("TransactionActor", fields: [actorId], references: [id])
 
-  note             String?
-  metadata         Json?
+  note     String?
+  metadata Json?
 
-  processedAt      DateTime?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([orderId])
   @@index([reference])
@@ -388,27 +437,29 @@ model EscrowTransaction {
 // ─────────────────────────────────────────────────────────────────
 
 model Dispute {
-  id          String        @id @default(cuid())
+  id String @id @default(cuid())
 
-  orderId     String        @unique  // one dispute per order
-  order       Order         @relation(fields: [orderId], references: [id])
+  orderId String @unique // one dispute per order
+  order   Order  @relation(fields: [orderId], references: [id])
 
-  raisedById  String
-  raisedBy    User          @relation("DisputeRaisedBy", fields: [raisedById], references: [id])
+  raisedById String
+  raisedBy   User   @relation("DisputeRaisedBy", fields: [raisedById], references: [id])
 
   reason      DisputeReason
   description String
-  evidence    Json?         // array of image URLs / document URLs
+  evidence    Json? // array of image URLs / document URLs
 
-  status      DisputeStatus @default(OPEN)
+  status DisputeStatus @default(OPEN)
 
   resolvedById   String?
-  resolvedBy     User?      @relation("DisputeResolvedBy", fields: [resolvedById], references: [id])
+  resolvedBy     User?     @relation("DisputeResolvedBy", fields: [resolvedById], references: [id])
   resolutionNote String?
   resolvedAt     DateTime?
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  events DisputeEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@index([status])
@@ -417,28 +468,48 @@ model Dispute {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// DISPUTE EVENT (timeline of actions taken on a dispute)
+// ─────────────────────────────────────────────────────────────────
+
+model DisputeEvent {
+  id String @id @default(cuid())
+
+  disputeId String
+  dispute   Dispute @relation(fields: [disputeId], references: [id])
+
+  actorId  String
+  action   String
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([disputeId])
+  @@map("dispute_events")
+}
+
+// ─────────────────────────────────────────────────────────────────
 // NOTIFICATION
 // ─────────────────────────────────────────────────────────────────
 
 model Notification {
-  id        String              @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId    String
-  user      User                @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  orderId   String?
-  order     Order?              @relation(fields: [orderId], references: [id])
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id])
 
-  type      NotificationType
-  channel   NotificationChannel @default(IN_APP)
-  title     String
-  body      String
-  isRead    Boolean             @default(false)
-  readAt    DateTime?
-  metadata  Json?
+  type     NotificationType
+  channel  NotificationChannel @default(IN_APP)
+  title    String
+  body     String
+  isRead   Boolean             @default(false)
+  readAt   DateTime?
+  metadata Json?
 
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([orderId])
@@ -453,19 +524,19 @@ model Notification {
 // ─────────────────────────────────────────────────────────────────
 
 model EscrowAuditLog {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  orderId     String
-  actorId     String?  // user who triggered — null for system/auto
-  action      String   // HOLD | RELEASE | REFUND | AUTO_RELEASE | DISPUTE_HOLD
-  fromStatus  String   // escrowStatus before
-  toStatus    String   // escrowStatus after
-  amount      Decimal  @db.Decimal(12, 2)
-  reference   String?  // payment/release reference
-  note        String?
-  metadata    Json?    // extra context
+  orderId    String
+  actorId    String? // user who triggered — null for system/auto
+  action     String // HOLD | RELEASE | REFUND | AUTO_RELEASE | DISPUTE_HOLD
+  fromStatus String // escrowStatus before
+  toStatus   String // escrowStatus after
+  amount     Decimal @db.Decimal(12, 2)
+  reference  String? // payment/release reference
+  note       String?
+  metadata   Json? // extra context
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([orderId])
   @@index([actorId])
@@ -496,27 +567,27 @@ enum PaymentRecordStatus {
 }
 
 model PaymentRecord {
-  id            String              @id @default(cuid())
+  id String @id @default(cuid())
 
-  orderId       String
-  order         Order               @relation(fields: [orderId], references: [id])
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
 
-  reference     String              @unique  // Paystack reference
-  amount        Decimal             @db.Decimal(12, 2)
-  currency      String              @default("NGN")
-  channel       PaymentChannel      @default(UNKNOWN)
-  status        PaymentRecordStatus @default(PENDING)
+  reference String              @unique // Paystack reference
+  amount    Decimal             @db.Decimal(12, 2)
+  currency  String              @default("NGN")
+  channel   PaymentChannel      @default(UNKNOWN)
+  status    PaymentRecordStatus @default(PENDING)
 
-  authorizationUrl String?          // Paystack redirect URL
-  accessCode       String?          // Paystack access code
-  paystackId       String?          // Paystack transaction ID after verification
+  authorizationUrl String? // Paystack redirect URL
+  accessCode       String? // Paystack access code
+  paystackId       String? // Paystack transaction ID after verification
 
-  initiatedBy   String?            // buyer userId
-  verifiedAt    DateTime?
-  paystackData  Json?               // raw Paystack response
+  initiatedBy  String? // buyer userId
+  verifiedAt   DateTime?
+  paystackData Json? // raw Paystack response
 
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@index([reference])
@@ -537,29 +608,29 @@ enum TransferRecordStatus {
 }
 
 model TransferRecord {
-  id              String               @id @default(cuid())
+  id String @id @default(cuid())
 
-  orderId         String
-  order           Order                @relation(fields: [orderId], references: [id])
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
 
-  recipientId     String
-  recipient       TransferRecipient    @relation(fields: [recipientId], references: [id])
+  recipientId String
+  recipient   TransferRecipient @relation(fields: [recipientId], references: [id])
 
-  reference       String               @unique
-  transferCode    String?              // Paystack transfer_code
-  amount          Decimal              @db.Decimal(12, 2)
-  currency        String               @default("NGN")
-  status          TransferRecordStatus @default(PENDING)
-  reason          String?
+  reference    String               @unique
+  transferCode String? // Paystack transfer_code
+  amount       Decimal              @db.Decimal(12, 2)
+  currency     String               @default("NGN")
+  status       TransferRecordStatus @default(PENDING)
+  reason       String?
 
-  paystackData    Json?
-  failureReason   String?
+  paystackData  Json?
+  failureReason String?
 
-  initiatedAt     DateTime             @default(now())
-  completedAt     DateTime?
+  initiatedAt DateTime  @default(now())
+  completedAt DateTime?
 
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@index([reference])
@@ -572,25 +643,44 @@ model TransferRecord {
 // ─────────────────────────────────────────────────────────────────
 
 model TransferRecipient {
-  id            String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id])
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
-  recipientCode String   @unique  // Paystack recipient_code
+  recipientCode String @unique // Paystack recipient_code
   accountName   String
   accountNumber String
   bankCode      String
   bankName      String
-  currency      String   @default("NGN")
+  currency      String @default("NGN")
 
-  paystackData  Json?
+  paystackData Json?
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  transfers     TransferRecord[]
+  transfers TransferRecord[]
 
   @@index([userId])
   @@map("transfer_recipients")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ORDER MESSAGES
+// ─────────────────────────────────────────────────────────────────
+
+model OrderMessage {
+  id        String   @id @default(cuid())
+  orderId   String
+  senderId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@index([senderId])
 }

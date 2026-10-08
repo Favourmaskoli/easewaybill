@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
@@ -13,7 +13,7 @@ import {
   Image as ImageIcon,
   Mail,
   FileText,
-  DollarSign,
+  Banknote,
   Truck,
   MapPin,
   ChevronRight,
@@ -23,6 +23,9 @@ import {
 } from "lucide-react";
 import MobilePageHeader from "@/components/layout/MobilePageHeader";
 import { useCreateOrder } from "@/lib/hooks/useOrders";
+import AddressAutocomplete, {
+  type ResolvedAddress,
+} from "./AddressAutocomplete";
 
 // ================================================================
 // TYPES
@@ -31,15 +34,46 @@ import { useCreateOrder } from "@/lib/hooks/useOrders";
 interface FormData {
   description: string;
   itemName: string;
-  pickupAddress: string;
-  deliveryAddress: string;
+  pickup: ResolvedAddress | null;
+  delivery: ResolvedAddress | null;
   buyerEmail: string;
   buyerName: string;
   buyerPhone: string;
   itemPrice: string;
 }
 
-type FormErrors = Partial<Record<keyof FormData, string>>;
+type FormErrors = Partial<Record<keyof FormData | "image", string>>;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Accepts +234 800 000 0000, 0800 000 0000, 08000000000 etc.
+const PHONE_RE = /^\+?[\d\s()-]{7,20}$/;
+
+// ── Price formatting ────────────────────────────────────────────
+// Cleans raw input into a comma-grouped string: strips non-digits
+// (except one decimal point), collapses extra dots, strips leading
+// zeros, caps decimals at 2 places, and inserts thousands commas.
+const formatPrice = (raw: string) => {
+  let cleaned = raw.replace(/[^\d.]/g, "");
+
+  // Collapse to at most one decimal point — keep the first, drop the rest
+  const firstDot = cleaned.indexOf(".");
+  if (firstDot !== -1) {
+    cleaned =
+      cleaned.slice(0, firstDot + 1) +
+      cleaned.slice(firstDot + 1).replace(/\./g, "");
+  }
+
+  let [int, dec] = cleaned.split(".");
+  int = int ?? "";
+
+  // Strip leading zeros, but keep a single "0" if that's the whole integer part
+  int = int.replace(/^0+(?=\d)/, "");
+
+  const intFmt = int.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return dec !== undefined ? `${intFmt}.${dec.slice(0, 2)}` : intFmt;
+};
+
+const parsePrice = (formatted: string) => Number(formatted.replace(/,/g, ""));
 
 // ================================================================
 // SUB-COMPONENTS — defined OUTSIDE main component
@@ -49,20 +83,32 @@ type FormErrors = Partial<Record<keyof FormData, string>>;
 interface FormFieldProps {
   label: string;
   icon: LucideIcon;
+  htmlFor?: string;
   error?: string;
   children: React.ReactNode;
 }
 
-function FormField({ label, icon: Icon, error, children }: FormFieldProps) {
+function FormField({
+  label,
+  icon: Icon,
+  htmlFor,
+  error,
+  children,
+}: FormFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-sm font-semibold text-olive-800">
+      <label
+        htmlFor={htmlFor}
+        className="flex items-center gap-1.5 text-sm font-semibold text-olive-800"
+      >
         <Icon size={13} className="text-olive-500" />
         {label}
       </label>
       {children}
       {error && (
-        <p className="text-xs text-red-500 font-medium pl-1">{error}</p>
+        <p role="alert" className="text-xs text-red-500 font-medium pl-1">
+          {error}
+        </p>
       )}
     </div>
   );
@@ -144,6 +190,7 @@ function ImagePreviewCard({
       <button
         type="button"
         onClick={onRemove}
+        aria-label="Remove image"
         className="clay-inset p-2 rounded-xl text-red-400 hover:text-red-600 transition-colors"
       >
         <X size={16} />
@@ -160,38 +207,48 @@ interface FormFieldsProps {
   formData: FormData;
   errors: FormErrors;
   apiError: string | null;
-  imagePreview: string | null;
-  itemImage: File | null;
+  imagePreviews: Array<{ file: File; url: string }>;
+  imageError: string | null;
   isDesktop?: boolean;
   isSubmitting: boolean;
   isCreating: boolean;
-  onFieldChange: (field: keyof FormData, value: string) => void;
+  onFieldChange: <K extends keyof FormData>(
+    field: K,
+    value: FormData[K],
+  ) => void;
+  onPriceChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageTrigger: () => void;
-  onImageRemove: () => void;
+  onImageRemove: (index: number) => void;
 }
 
 function FormFields({
   formData,
   errors,
   apiError,
-  imagePreview,
-  itemImage,
+  imagePreviews,
+  imageError,
   isDesktop = false,
   isSubmitting,
   isCreating,
   onFieldChange,
+  onPriceChange,
   onImageTrigger,
   onImageRemove,
 }: FormFieldsProps) {
+  // Prefix ids so the mobile + desktop copies never share an id.
+  const p = isDesktop ? "d" : "m";
+
   return (
     <>
       {/* Item description */}
       <FormField
         label="What are you selling?"
         icon={FileText}
+        htmlFor={`${p}-description`}
         error={errors.description}
       >
         <textarea
+          id={`${p}-description`}
           placeholder="e.g. iPhone 15 Pro Max 256GB Black — brand new sealed"
           value={formData.description}
           onChange={(e) => onFieldChange("description", e.target.value)}
@@ -201,8 +258,13 @@ function FormFields({
       </FormField>
 
       {/* Item name */}
-      <FormField label="Item Name (optional)" icon={Package}>
+      <FormField
+        label="Item Name (optional)"
+        icon={Package}
+        htmlFor={`${p}-itemName`}
+      >
         <input
+          id={`${p}-itemName`}
           type="text"
           placeholder="e.g. iPhone 15 Pro Max"
           value={formData.itemName}
@@ -213,39 +275,41 @@ function FormFields({
 
       {/* Addresses */}
       <div className={isDesktop ? "grid grid-cols-2 gap-5" : "space-y-5"}>
-        <FormField
-          label="Pickup Address"
-          icon={MapPin}
-          error={errors.pickupAddress}
-        >
-          <input
-            type="text"
-            placeholder="Where are the goods? e.g. 12 Adeola Odeku, VI Lagos"
-            value={formData.pickupAddress}
-            onChange={(e) => onFieldChange("pickupAddress", e.target.value)}
-            className={`clay-input ${errors.pickupAddress ? "border-red-400" : ""}`}
+        <FormField label="Pickup Address" icon={MapPin} error={errors.pickup}>
+          <AddressAutocomplete
+            label="Pickup location"
+            placeholder="Where are the goods? e.g. 12 Adeola Odeku, VI"
+            required
+            value={formData.pickup}
+            onChange={(a) => onFieldChange("pickup", a)}
           />
         </FormField>
 
         <FormField
           label="Delivery Address"
           icon={Truck}
-          error={errors.deliveryAddress}
+          error={errors.delivery}
         >
-          <input
-            type="text"
+          <AddressAutocomplete
+            label="Delivery location"
             placeholder="Where to deliver? e.g. 45 Admiralty Way, Lekki"
-            value={formData.deliveryAddress}
-            onChange={(e) => onFieldChange("deliveryAddress", e.target.value)}
-            className={`clay-input ${errors.deliveryAddress ? "border-red-400" : ""}`}
+            required
+            value={formData.delivery}
+            onChange={(a) => onFieldChange("delivery", a)}
           />
         </FormField>
       </div>
 
       {/* Buyer details */}
       <div className={isDesktop ? "grid grid-cols-2 gap-5" : "space-y-5"}>
-        <FormField label="Buyer's Email" icon={Mail} error={errors.buyerEmail}>
+        <FormField
+          label="Buyer's Email"
+          icon={Mail}
+          htmlFor={`${p}-buyerEmail`}
+          error={errors.buyerEmail}
+        >
           <input
+            id={`${p}-buyerEmail`}
             type="email"
             placeholder="buyer@example.com"
             value={formData.buyerEmail}
@@ -256,8 +320,13 @@ function FormFields({
           />
         </FormField>
 
-        <FormField label="Buyer's Name (optional)" icon={User}>
+        <FormField
+          label="Buyer's Name (optional)"
+          icon={User}
+          htmlFor={`${p}-buyerName`}
+        >
           <input
+            id={`${p}-buyerName`}
             type="text"
             placeholder="e.g. Amaka Nwosu"
             value={formData.buyerName}
@@ -268,27 +337,35 @@ function FormFields({
       </div>
 
       {/* Buyer phone */}
-      <FormField label="Buyer's Phone (optional)" icon={Phone}>
+      <FormField
+        label="Buyer's Phone (optional)"
+        icon={Phone}
+        htmlFor={`${p}-buyerPhone`}
+        error={errors.buyerPhone}
+      >
         <input
+          id={`${p}-buyerPhone`}
           type="tel"
           placeholder="+234 800 000 0000"
           value={formData.buyerPhone}
           onChange={(e) => onFieldChange("buyerPhone", e.target.value)}
-          className="clay-input"
+          className={`clay-input ${errors.buyerPhone ? "border-red-400" : ""}`}
         />
       </FormField>
 
       {/* Item price */}
       <FormField
         label="Item Price (₦)"
-        icon={DollarSign}
+        icon={Banknote}
+        htmlFor={`${p}-itemPrice`}
         error={errors.itemPrice}
       >
         <input
+          id={`${p}-itemPrice`}
           type="text"
           placeholder="e.g. 350,000"
           value={formData.itemPrice}
-          onChange={(e) => onFieldChange("itemPrice", e.target.value)}
+          onChange={onPriceChange}
           className={`clay-input ${errors.itemPrice ? "border-red-400" : ""}`}
           inputMode="decimal"
         />
@@ -298,17 +375,36 @@ function FormFields({
       <div>
         <label className="flex items-center gap-1.5 text-sm font-semibold text-olive-800 mb-2">
           <ImageIcon size={13} className="text-olive-500" />
-          Item Image (optional)
+          Item Image
         </label>
-        {imagePreview ? (
-          <ImagePreviewCard
-            src={imagePreview}
-            fileName={itemImage?.name ?? ""}
-            fileSize={itemImage?.size ?? 0}
-            onRemove={onImageRemove}
-          />
-        ) : (
-          <ImageUploadZone onTrigger={onImageTrigger} isDesktop={isDesktop} />
+        <div className="space-y-3">
+          {imagePreviews.length > 0 && (
+            <div className="space-y-2">
+              {imagePreviews.map(({ file, url }, index) => (
+                <ImagePreviewCard
+                  key={`${file.name}-${file.lastModified}-${index}`}
+                  src={url}
+                  fileName={file.name}
+                  fileSize={file.size}
+                  onRemove={() => onImageRemove(index)}
+                />
+              ))}
+            </div>
+          )}
+          {imagePreviews.length < 5 && (
+            <ImageUploadZone onTrigger={onImageTrigger} isDesktop={isDesktop} />
+          )}
+          <p className="text-xs text-olive-500">
+            Add up to 5 images. Each image must be 5MB or smaller.
+          </p>
+        </div>
+        {(imageError || errors.image) && (
+          <p
+            role="alert"
+            className="text-xs text-red-500 font-medium pl-1 mt-1.5"
+          >
+            {imageError || errors.image}
+          </p>
         )}
       </div>
 
@@ -338,7 +434,10 @@ function FormFields({
 
       {/* API error */}
       {apiError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+        <div
+          role="alert"
+          className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3"
+        >
           {apiError}
         </div>
       )}
@@ -381,104 +480,208 @@ export default function CreateOrderPage() {
   const [formData, setFormData] = useState<FormData>({
     description: "",
     itemName: "",
-    pickupAddress: "",
-    deliveryAddress: "",
+    pickup: null,
+    delivery: null,
     buyerEmail: "",
     buyerName: "",
     buyerPhone: "",
     itemPrice: "",
   });
 
-  const [itemImage, setItemImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [itemImages, setItemImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<
+    Array<{ file: File; url: string }>
+  >([]);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Keep the latest previews available to the unmount cleanup.
+  const imagePreviewsRef = useRef(imagePreviews);
+  imagePreviewsRef.current = imagePreviews;
+
+  useEffect(() => {
+    return () => {
+      imagePreviewsRef.current.forEach(({ url }) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
   // ── Handlers ──────────────────────────────────────────────────
 
-  const handleChange = (field: keyof FormData, value: string) => {
+  const handleChange = <K extends keyof FormData>(
+    field: K,
+    value: FormData[K],
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+  };
+
+  // Formats the price on every keystroke while preserving cursor
+  // position by digit count, since a naive controlled-input replace
+  // would otherwise force the cursor to the end after every change.
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const cursorPos = input.selectionStart ?? input.value.length;
+    const digitsBeforeCursor = input.value
+      .slice(0, cursorPos)
+      .replace(/\D/g, "").length;
+
+    const formatted = formatPrice(input.value);
+    handleChange("itemPrice", formatted);
+
+    // Wait for React to commit the new value, then re-find the cursor
+    // by counting digits rather than raw character index (comma
+    // insertion/removal shifts character positions around it).
+    requestAnimationFrame(() => {
+      let count = 0;
+      let newPos = formatted.length;
+      for (let i = 0; i < formatted.length; i++) {
+        if (/\d/.test(formatted[i])) count++;
+        if (count === digitsBeforeCursor) {
+          newPos = i + 1;
+          break;
+        }
+      }
+      input.setSelectionRange(newPos, newPos);
+    });
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image file.");
-      return;
+    const selectedFiles = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (selectedFiles.length === 0) return;
+
+    const validFiles: File[] = [];
+    for (const file of selectedFiles) {
+      if (!file.type.startsWith("image/")) {
+        setImageError(`${file.name} is not a valid image file.`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setImageError(`${file.name} exceeds the 5MB limit.`);
+        continue;
+      }
+      validFiles.push(file);
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be under 5MB.");
-      return;
+
+    const remainingSlots = Math.max(0, 5 - itemImages.length);
+    const filesToAdd = validFiles.slice(0, remainingSlots);
+    if (validFiles.length > remainingSlots) {
+      setImageError("You can upload a maximum of 5 images.");
+    } else if (filesToAdd.length > 0) {
+      setImageError(null);
     }
-    setItemImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    if (filesToAdd.length === 0) return;
+
+    setItemImages((previous) => [...previous, ...filesToAdd]);
+    setImagePreviews((previous) => [
+      ...previous,
+      ...filesToAdd.map((file) => ({ file, url: URL.createObjectURL(file) })),
+    ]);
+    setErrors((previous) => ({ ...previous, image: undefined }));
   };
 
-  const handleRemoveImage = () => {
-    setItemImage(null);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const handleRemoveImage = (index: number) => {
+    setItemImages((previous) => previous.filter((_, i) => i !== index));
+    setImagePreviews((previous) => {
+      const removed = previous[index];
+      if (removed) URL.revokeObjectURL(removed.url);
+      return previous.filter((_, i) => i !== index);
+    });
+    setImageError(null);
   };
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const e: FormErrors = {};
+    const price = parsePrice(formData.itemPrice);
+
     if (!formData.description.trim())
-      newErrors.description = "Item description is required";
-    if (!formData.pickupAddress.trim())
-      newErrors.pickupAddress = "Pickup address is required";
-    if (!formData.deliveryAddress.trim())
-      newErrors.deliveryAddress = "Delivery address is required";
-    if (!formData.buyerEmail.trim())
-      newErrors.buyerEmail = "Buyer email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.buyerEmail))
-      newErrors.buyerEmail = "Enter a valid email address";
-    if (!formData.itemPrice.trim())
-      newErrors.itemPrice = "Item price is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+      e.description = "Describe the item you are selling";
+    if (!formData.pickup?.formattedAddress.trim())
+      e.pickup = "Enter the pickup address";
+    if (!formData.delivery?.formattedAddress.trim())
+      e.delivery = "Enter the delivery address";
+
+    if (!formData.buyerEmail.trim()) e.buyerEmail = "Enter the buyer's email";
+    else if (!EMAIL_RE.test(formData.buyerEmail.trim()))
+      e.buyerEmail = "Enter a valid email address";
+
+    if (
+      formData.buyerPhone.trim() &&
+      !PHONE_RE.test(formData.buyerPhone.trim())
+    )
+      e.buyerPhone = "Enter a valid phone number";
+
+    if (!formData.itemPrice.trim()) e.itemPrice = "Enter the item price";
+    else if (!Number.isFinite(price) || price <= 0)
+      e.itemPrice = "Enter an amount greater than zero";
+
+    if (itemImages.length === 0)
+      e.image = "Upload at least one photo of the item";
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (isSubmitting || isCreating) return;
     if (!validateForm()) return;
 
+    const { pickup, delivery } = formData;
+    if (!pickup || !delivery || itemImages.length === 0) return; // narrowed by validateForm
+
     setIsSubmitting(true);
-
-    const priceNum = parseFloat(formData.itemPrice.replace(/[₦,\s]/g, ""));
-
-    const order = await createOrder({
-      description: formData.description,
-      pickupAddress: formData.pickupAddress,
-      deliveryAddress: formData.deliveryAddress,
-      buyerEmail: formData.buyerEmail,
-      buyerName: formData.buyerName || undefined,
-      buyerPhone: formData.buyerPhone || undefined,
-      itemPrice: priceNum,
-      items: [
+    try {
+      const priceNum = parsePrice(formData.itemPrice);
+      const description = formData.description.trim();
+      // Log the first 120 characters of the Mapbox IDs for debugging
+      console.log(
+        "pickup id:",
+        pickup.mapboxId?.length,
+        pickup.mapboxId?.slice(0, 120),
+      );
+      console.log(
+        "delivery id:",
+        delivery.mapboxId?.length,
+        delivery.mapboxId?.slice(0, 120),
+      );
+      const order = await createOrder(
         {
-          name: formData.itemName || formData.description,
-          quantity: 1,
-          unitPrice: priceNum,
+          description,
+          pickupAddress: pickup.formattedAddress,
+          pickupLat: pickup.lat ?? undefined,
+          pickupLng: pickup.lng ?? undefined,
+          pickupMapboxId: pickup.mapboxId ?? undefined,
+          deliveryAddress: delivery.formattedAddress,
+          deliveryLat: delivery.lat ?? undefined,
+          deliveryLng: delivery.lng ?? undefined,
+          deliveryMapboxId: delivery.mapboxId ?? undefined,
+          buyerEmail: formData.buyerEmail.trim().toLowerCase(),
+          buyerName: formData.buyerName.trim() || undefined,
+          buyerPhone: formData.buyerPhone.trim() || undefined,
+          itemPrice: priceNum,
+          items: [
+            {
+              name: formData.itemName.trim() || description,
+              quantity: 1,
+              unitPrice: priceNum,
+            },
+          ],
         },
-      ],
-    });
+        itemImages,
+      );
 
-    // ✅ No sendToBuyer call needed — the backend now creates orders
-    // directly in PENDING_BUYER status (orders.service.ts create method).
-    // The buyer is notified via ORDER_SENT_TO_BUYER event immediately.
-
-    setIsSubmitting(false);
-
-    if (order) {
-      setIsSuccess(true);
-      await new Promise((r) => setTimeout(r, 800));
-      router.push(`/dashboard/orders/${order.id}`);
+      // The backend creates orders directly in PENDING_BUYER status and
+      // notifies the buyer via ORDER_SENT_TO_BUYER, so no sendToBuyer call.
+      if (order) {
+        setIsSuccess(true);
+        await new Promise((r) => setTimeout(r, 800));
+        router.push(`/dashboard/orders/${order.id}`);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -488,11 +691,12 @@ export default function CreateOrderPage() {
     formData,
     errors,
     apiError,
-    imagePreview,
-    itemImage,
+    imagePreviews,
+    imageError,
     isSubmitting,
     isCreating,
     onFieldChange: handleChange,
+    onPriceChange: handlePriceChange,
     onImageTrigger: () => fileInputRef.current?.click(),
     onImageRemove: handleRemoveImage,
   };
@@ -543,6 +747,7 @@ export default function CreateOrderPage() {
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        multiple
         onChange={handleImageSelect}
         className="hidden"
       />

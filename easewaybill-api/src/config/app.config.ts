@@ -16,6 +16,9 @@ export const appConfig = () => ({
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
     refreshSecret: process.env.JWT_REFRESH_SECRET,
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+
+    emailVerificationSecret: process.env.JWT_EMAIL_VERIFICATION_SECRET,
+    emailVerificationExpiresIn: process.env.JWT_EMAIL_VERIFICATION_EXPIRES_IN ?? '24h',
   },
 
   throttle: {
@@ -47,12 +50,17 @@ export const appConfig = () => ({
     password: process.env.REDIS_PASSWORD || undefined,
   },
   email: {
-    host: process.env.SMTP_HOST ?? 'sandbox.smtp.mailtrap.io',
-    port: parseInt(process.env.SMTP_PORT ?? '2525', 10),
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT ?? '587', 10),
+    secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
     from: process.env.EMAIL_FROM ?? 'noreply@easewaybill.com',
     fromName: process.env.EMAIL_FROM_NAME ?? 'EaseWaybill',
+  },
+
+  frontend: {
+    url: process.env.FRONTEND_URL ?? 'http://localhost:3000',
   },
 });
 

@@ -30,6 +30,8 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { PaystackIpMiddleware } from './modules/payments/paystack-ip.middleware';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { MessagesModule } from './modules/messages/messages.module';
+import { TrackingModule } from './modules/tracking/tracking.module';
 
 @Module({
   imports: [
@@ -73,6 +75,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     DisputesModule,
     EscrowModule,
     PaymentsModule,
+    MessagesModule,
+    TrackingModule,
   ],
 
   providers: [

@@ -12,3 +12,94 @@ README.md
 docker-compose*.yml
 .github
 test
+
+# EaseWaybill Legal Section
+
+How the `/legal` pages work, where things live, and how to add or edit a
+policy. This file lives at the root of the legal content system — put it in
+`content/legal/README.md` or `docs/README.md`, whichever your repo convention
+prefers.
+
+## How it works
+
+Each legal document is a markdown file with frontmatter, stored in
+`content/legal/`. A single component (`LegalPageShell`) renders every
+document the same way; each route in `app/legal/<slug>/page.tsx` just fetches
+its own document by slug and hands it to that component.
+
+```
+content/legal/<slug>.md   →  lib/legal.ts (getLegalDoc)  →  app/legal/<slug>/page.tsx  →  LegalPageShell
+```
+
+Nothing about the visual design lives in the markdown — that's all in
+`LegalPageShell.tsx`. The markdown only holds title, dates, summary, and body
+text, so legal copy can be edited without touching any component code.
+
+## Folder structure
+
+```
+content/legal/          → the actual policy text (markdown + frontmatter)
+app/legal/               → one route folder per policy, plus the hub page
+components/legal/        → shared rendering: page shell, footer links, cookie banner
+lib/legal.ts              → reads/parses the markdown files
+docs/legal-launch-notes.md → nav structure, footer copy, banner copy, verification notice
+internal-docs/            → regulatory gap-analysis + review checklist (NOT published)
+```
+
+## Current documents
+
+| Slug | File | Covers |
+|---|---|---|
+| `privacy-policy` | `privacy-policy.md` | Data collected, why, how it's used, user rights |
+| `refund-policy` | `refund-policy.md` | When refunds apply, escrow-release implications |
+| `terms-and-conditions` | `terms-and-conditions.md` | Platform rules, escrow process, AI-assisted disputes |
+| `cookie-policy` | `cookie-policy.md` | Cookie categories, consent, banner text |
+| `accessibility-statement` | `accessibility-statement.md` | Accessibility commitments, how to report issues |
+| `copyright-ip-policy` | `copyright-ip-policy.md` | Ownership, user-content licence, takedown process |
+| `tracking-analytics` | `tracking-analytics.md` | Technical/usage data collected and why |
+| `fake-reviews-policy` | `fake-reviews-policy.md` | Rules against fake/manipulated reviews |
+| `third-party-services` | `third-party-services.md` | Paystack and other integrated services |
+| `business-details` | `business-details.md` | Registered entity, contact details |
+
+## Adding a new policy
+
+1. Add `content/legal/<new-slug>.md` with frontmatter:
+   ```markdown
+   ---
+   title: "Your Policy Title"
+   summary: "One-line description shown on the hub page."
+   effectiveDate: "YYYY-MM-DD"
+   lastUpdated: "YYYY-MM-DD"
+   ---
+
+   Body content here...
+   ```
+2. Add `app/legal/<new-slug>/page.tsx` following the pattern used by the
+   existing pages (fetch the doc by slug, pass it to `LegalPageShell`, set
+   `metadata.title`/`description`).
+3. Add the new link to `components/legal/LegalFooterLinks.tsx` if it belongs
+   in the footer, or leave it hub-page-only if it's lower priority.
+4. The hub page (`app/legal/page.tsx`) picks up every document in
+   `content/legal/` automatically — no change needed there.
+
+## Editing an existing policy
+
+Edit the markdown file directly. Update `lastUpdated` in the frontmatter
+whenever the body text changes materially — that date is what renders next
+to the title on both the hub page and the document page.
+
+## Before publishing anything
+
+Every document currently in `content/legal/` contains bracketed placeholders
+(`[INSERT ...]`) for business details, dates, and operational specifics (fee
+schedule, dispute windows, retention periods) that have not been confirmed
+yet. **Do not replace a placeholder with an invented value** — leave it until
+the real figure is confirmed.
+
+More importantly: these documents are first drafts. They have not been
+reviewed by a Nigerian lawyer. See `internal-docs/legal-review-checklist.md`
+for the full list of what needs legal and operational confirmation —
+including, as the highest-priority open item, whether EaseWaybill's
+escrow/fund-holding model requires any separate CBN licensing beyond routing
+payments through Paystack. Nothing in `content/legal/` should be treated as
+final or go live until that review is complete.

@@ -11,6 +11,8 @@ import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
+import { VerifyEmailDto, ResendVerificationDto } from './dto/verify-email.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/forgot-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -70,5 +72,71 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current authenticated user' })
   async me(@CurrentUser() user: AuthenticatedUser): Promise<AuthenticatedUser> {
     return user;
+  }
+
+  // ── POST /auth/verify-email ──────────────────────────────────────
+  @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @ApiOperation({ summary: 'Verify email address using the token from the emailed link' })
+  @ApiResponse({ status: 200, description: 'Email verified (or already was)' })
+  @ApiResponse({ status: 400, description: 'Token invalid or expired' })
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ message: string }> {
+    return this.authService.verifyEmail(dto.token);
+  }
+
+  // ── POST /auth/resend-verification ───────────────────────────────
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: 'Resend the verification email' })
+  @ApiResponse({
+    status: 200,
+    description: 'Generic success response (does not leak account existence)',
+  })
+  async resendVerification(@Body() dto: ResendVerificationDto): Promise<{ message: string }> {
+    return this.authService.resendVerification(dto.email);
+  }
+
+  // @Post('forgot-password')
+  // @HttpCode(HttpStatus.OK)
+  // @Throttle({ default: { limit: 3, ttl: 60_000 } }) // 3 requests/min per IP
+  // async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+  //   await this.authService.forgotPassword(dto.email);
+  //   // Always return the same message — never reveal whether the email exists
+  //   return { message: 'If an account with that email exists, a reset link has been sent.' };
+  // }
+
+  // @Post('reset-password')
+  // @HttpCode(HttpStatus.OK)
+  // @Throttle({ default: { limit: 5, ttl: 60_000 } }) // 5 attempts/min per IP
+  // async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+  //   await this.authService.resetPassword(dto.token, dto.newPassword);
+  //   return { message: 'Password has been reset successfully.' };
+  // }
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+    await this.authService.forgotPassword(dto.email);
+
+    return {
+      message: 'If an account with that email exists, a reset link has been sent.',
+    };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+
+    return {
+      message: 'Password has been reset successfully.',
+    };
   }
 }

@@ -25,6 +25,9 @@ export default function SignUpPage() {
     phone: "",
   });
 
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsError, setTermsError] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -33,13 +36,6 @@ export default function SignUpPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-  //   // TODO: Connect to NestJS API
-  //   console.log("Sign Up Data:", formData);
-  //   setTimeout(() => setLoading(false), 2000);
-  // };
   const router = useRouter();
   const { register, error, clearError } = useAuth();
 
@@ -51,6 +47,12 @@ export default function SignUpPage() {
       return;
     }
 
+    if (!acceptedTerms) {
+      setTermsError(true);
+      return;
+    }
+    setTermsError(false);
+
     clearError();
     setLoading(true);
 
@@ -58,22 +60,21 @@ export default function SignUpPage() {
     const lastName = rest.join(" ") || firstName;
 
     try {
-      // await register({
-      //   firstName,
-      //   lastName,
-      //   email: formData.email,
-      //   password: formData.password,
-      //   phone: formData.phone,
-      //   role: "SELLER", // default role — can be changed in settings
-      // });
       await register({
         firstName,
         lastName,
         email: formData.email,
         password: formData.password,
         phone: formData.phone || undefined,
+        acceptedTerms,
       });
-      router.push("/dashboard");
+      // Registration now sends a verification email — send them to a
+      // "check your inbox" screen instead of straight to the dashboard.
+      // (isEmailVerified starts false; nothing currently blocks dashboard
+      // access on that, but this sets the right expectation up front.)
+      router.push(
+        `/verify-email/sent?email=${encodeURIComponent(formData.email)}`,
+      );
     } catch {
       // error is set in the store
     } finally {
@@ -289,6 +290,44 @@ export default function SignUpPage() {
                   className="input-field pl-10"
                 />
               </div>
+            </div>
+
+            {/* Terms & Conditions */}
+            <div>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    if (e.target.checked) setTermsError(false);
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="text-sm text-gray-600 leading-snug">
+                  I agree to EaseWaybill's{" "}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="text-green-600 font-medium hover:underline"
+                  >
+                    Terms & Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="text-green-600 font-medium hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+              {termsError && (
+                <p className="text-xs text-red-600 mt-1.5 ml-6.5">
+                  You must accept the Terms & Conditions to create an account
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}

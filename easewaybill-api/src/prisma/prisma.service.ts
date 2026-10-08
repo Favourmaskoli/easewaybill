@@ -1,7 +1,13 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+
+type TransactionOptions = {
+  maxWait?: number;
+  timeout?: number;
+  isolationLevel?: Prisma.TransactionIsolationLevel;
+};
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
@@ -26,11 +32,24 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get orderItem() {
     return this.client.orderItem;
   }
+  get orderImage() {
+    return this.client.orderImage;
+  }
+  get orderMessage() {
+    return this.client.orderMessage;
+  }
   get waybill() {
     return this.client.waybill;
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get waybillEvent() {
+    return (this.client as any).waybillEvent;
+  }
   get escrowTransaction() {
     return this.client.escrowTransaction;
+  }
+  get escrowAuditLog() {
+    return this.client.escrowAuditLog;
   }
   get notification() {
     return this.client.notification;
@@ -38,34 +57,40 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get dispute() {
     return this.client.dispute;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get waybillEvent() {
-    return (this.client as any).waybillEvent;
-  }
   get paymentRecord() {
     return this.client.paymentRecord;
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get transferRecord() {
-    return (this.client as any).transferRecord;
+    return this.client.transferRecord;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get transferRecipient() {
-    return (this.client as any).transferRecipient;
+    return this.client.transferRecipient;
   }
 
   // ── Callback-style interactive transaction ───────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async $transaction<T>(fn: (tx: any) => Promise<T>): Promise<T>;
-  // ── Sequential operations array transaction ──────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async $transaction(operations: any[]): Promise<any[]>;
+  async $transaction<T>(
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+    options?: TransactionOptions,
+  ): Promise<T>;
+
+  // ── Array transaction ────────────────────────────────────────────
+  // Keeps each query's own type, so `const [rows, total] = await ...`
+  // stays typed instead of collapsing to `unknown`.
+  async $transaction<P extends Prisma.PrismaPromise<unknown>[]>(
+    operations: [...P],
+    options?: TransactionOptions,
+  ): Promise<{ [K in keyof P]: Awaited<P[K]> }>;
+
   // ── Implementation ───────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async $transaction<T>(fnOrOps: ((tx: any) => Promise<T>) | any[]): Promise<T | any[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.client.$transaction(fnOrOps as any);
+  async $transaction(
+    fnOrOps: ((tx: Prisma.TransactionClient) => Promise<unknown>) | Prisma.PrismaPromise<unknown>[],
+    options?: TransactionOptions,
+  ): Promise<unknown> {
+    // Branch so each call matches one of Prisma's own overloads.
+    if (typeof fnOrOps === 'function') {
+      return this.client.$transaction(fnOrOps, options);
+    }
+    return this.client.$transaction(fnOrOps, options);
   }
 
   // ── Lifecycle ────────────────────────────────────────────────────
@@ -79,11 +104,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     await this.client.$disconnect();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get escrowAuditLog() {
-    return this.client.escrowAuditLog;
-  }
-
   // ── Test utility ─────────────────────────────────────────────────
   async cleanDatabase(): Promise<void> {
     if (process.env.NODE_ENV === 'production') {
@@ -93,6 +113,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       this.client.notification.deleteMany(),
       this.client.escrowTransaction.deleteMany(),
       this.client.waybill.deleteMany(),
+      this.client.orderImage.deleteMany(),
       this.client.orderItem.deleteMany(),
       this.client.order.deleteMany(),
       this.client.user.deleteMany(),

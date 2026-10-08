@@ -1,54 +1,276 @@
+// // "use client";
+
+// // import { useState, useEffect, useCallback } from "react";
+// // import { notificationsApi } from "@/lib/api/notifications.api";
+// // import type {
+// //   Notification,
+// //   NotificationListResponse,
+// // } from "@/lib/types/api.types";
+
+// // export function useNotifications(params?: {
+// //   limit?: number;
+// //   unreadOnly?: boolean;
+// // }) {
+// //   const [result, setResult] = useState<NotificationListResponse | null>(null);
+// //   const [isLoading, setIsLoading] = useState(true);
+// //   const [error, setError] = useState<string | null>(null);
+// //   const [fetchKey, setFetchKey] = useState(0);
+
+// //   const refetch = useCallback(() => setFetchKey((k) => k + 1), []);
+
+// //   useEffect(() => {
+// //     let cancelled = false;
+// //     const load = async () => {
+// //       setIsLoading(true);
+// //       setError(null);
+// //       try {
+// //         const data = await notificationsApi.list({
+// //           limit: params?.limit ?? 20,
+// //           unreadOnly: params?.unreadOnly,
+// //         });
+// //         if (!cancelled) setResult(data);
+// //       } catch {
+// //         if (!cancelled) setError("Failed to load notifications");
+// //       } finally {
+// //         if (!cancelled) setIsLoading(false);
+// //       }
+// //     };
+// //     void load();
+// //     return () => {
+// //       cancelled = true;
+// //     };
+// //   }, [fetchKey, params?.limit, params?.unreadOnly]);
+
+// //   const markRead = useCallback(
+// //     async (id: string) => {
+// //       await notificationsApi.markRead(id);
+// //       refetch();
+// //     },
+// //     [refetch],
+// //   );
+
+// //   const markAllRead = useCallback(async () => {
+// //     await notificationsApi.markAllRead();
+// //     refetch();
+// //   }, [refetch]);
+
+// //   return {
+// //     notifications: result?.data ?? [],
+// //     unreadCount: result?.unreadCount ?? 0,
+// //     total: result?.meta?.total ?? 0,
+// //     hasNextPage: result?.meta?.hasNextPage ?? false,
+// //     isLoading,
+// //     error,
+// //     refetch,
+// //     markRead,
+// //     markAllRead,
+// //   };
+// // }
+
+// // // ── Lightweight hook for the header bell badge ────────────────────
+// // export function useUnreadCount() {
+// //   const [count, setCount] = useState(0);
+// //   const [fetchKey, setFetchKey] = useState(0);
+
+// //   const refetch = useCallback(() => setFetchKey((k) => k + 1), []);
+
+// //   useEffect(() => {
+// //     let cancelled = false;
+// //     const load = async () => {
+// //       try {
+// //         const data = await notificationsApi.list({
+// //           limit: 1,
+// //           unreadOnly: true,
+// //         });
+// //         if (!cancelled) setCount(data.unreadCount ?? 0);
+// //       } catch {
+// //         // Silently fail — badge not showing is not critical
+// //       }
+// //     };
+// //     void load();
+// //     return () => {
+// //       cancelled = true;
+// //     };
+// //   }, [fetchKey]);
+
+// //   // Poll every 30 seconds for new notifications
+// //   useEffect(() => {
+// //     const interval = setInterval(() => {
+// //       setFetchKey((k) => k + 1);
+// //     }, 30_000);
+// //     return () => clearInterval(interval);
+// //   }, []);
+
+// //   return { count, refetch };
+// // }
+
+// "use client";
+
+// import { useState, useEffect, useCallback } from "react";
+// import { notificationsApi } from "@/lib/api/notifications.api";
+// import type { NotificationListResponse } from "@/lib/types/api.types";
+
+// export function useNotifications(params?: {
+//   limit?: number;
+//   unreadOnly?: boolean;
+// }) {
+//   const [result, setResult] = useState<NotificationListResponse | null>(null);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
+//   const [fetchKey, setFetchKey] = useState(0);
+
+//   const refetch = useCallback(() => setFetchKey((k) => k + 1), []);
+
+//   useEffect(() => {
+//     let cancelled = false;
+//     const load = async () => {
+//       setIsLoading(true);
+//       setError(null);
+//       try {
+//         const data = await notificationsApi.list({
+//           limit: params?.limit ?? 20,
+//           unreadOnly: params?.unreadOnly,
+//         });
+//         if (!cancelled) setResult(data);
+//       } catch {
+//         if (!cancelled) setError("Failed to load notifications");
+//       } finally {
+//         if (!cancelled) setIsLoading(false);
+//       }
+//     };
+//     void load();
+//     return () => {
+//       cancelled = true;
+//     };
+//   }, [fetchKey, params?.limit, params?.unreadOnly]);
+
+//   const markRead = useCallback(
+//     async (id: string) => {
+//       await notificationsApi.markRead(id);
+//       refetch();
+//     },
+//     [refetch],
+//   );
+
+//   const markAllRead = useCallback(async () => {
+//     await notificationsApi.markAllRead();
+//     refetch();
+//   }, [refetch]);
+
+//   return {
+//     notifications: result?.data ?? [],
+//     unreadCount: result?.unreadCount ?? 0,
+//     total: result?.meta?.total ?? 0,
+//     hasNextPage: result?.meta?.hasNextPage ?? false,
+//     isLoading,
+//     error,
+//     refetch,
+//     markRead,
+//     markAllRead,
+//   };
+// }
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { notificationsApi } from "../api/notifications.api";
-import type { Notification } from "../types/api.types";
+import { notificationsApi } from "@/lib/api/notifications.api";
+import type {
+  Notification,
+  NotificationListResponse,
+} from "@/lib/types/api.types";
 
-export function useNotifications(unreadOnly = false) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [total, setTotal] = useState(0);
+export function useNotifications(params?: {
+  limit?: number;
+  unreadOnly?: boolean;
+}) {
+  const [result, setResult] = useState<NotificationListResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [fetchKey, setFetchKey] = useState(0);
 
-  const fetch = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await notificationsApi.list({ unreadOnly });
-      setNotifications(result.notifications);
-      setUnreadCount(result.unreadCount);
-      setTotal(result.total);
-    } catch {
-      // silent
-    } finally {
-      setIsLoading(false);
-    }
-  }, [unreadOnly]);
+  const refetch = useCallback(() => setFetchKey((k) => k + 1), []);
 
   useEffect(() => {
-    void fetch();
-  }, [fetch]);
+    let cancelled = false;
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await notificationsApi.list({
+          limit: params?.limit ?? 20,
+          unreadOnly: params?.unreadOnly,
+        });
+        if (!cancelled) setResult(data);
+      } catch {
+        if (!cancelled) setError("Failed to load notifications");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchKey, params?.limit, params?.unreadOnly]);
 
-  const markRead = async (id: string) => {
-    await notificationsApi.markRead(id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-  };
+  const markRead = useCallback(
+    async (id: string) => {
+      await notificationsApi.markRead(id);
+      refetch();
+    },
+    [refetch],
+  );
 
-  const markAllRead = async () => {
+  const markAllRead = useCallback(async () => {
     await notificationsApi.markAllRead();
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    setUnreadCount(0);
-  };
+    refetch();
+  }, [refetch]);
 
   return {
-    notifications,
-    unreadCount,
-    total,
+    // ✅ backend returns `notifications` not `data`
+    notifications: result?.notifications ?? [],
+    unreadCount: result?.unreadCount ?? 0,
+    total: result?.total ?? 0,
+    hasNextPage: result?.hasNextPage ?? false,
     isLoading,
-    refetch: fetch,
+    error,
+    refetch,
     markRead,
     markAllRead,
   };
+}
+
+// ── Lightweight hook for the header bell badge ────────────────────
+export function useUnreadCount() {
+  const [count, setCount] = useState(0);
+  const [fetchKey, setFetchKey] = useState(0);
+
+  const refetch = useCallback(() => setFetchKey((k) => k + 1), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const data = await notificationsApi.list({
+          limit: 1,
+          unreadOnly: true,
+        });
+        if (!cancelled) setCount(data.unreadCount ?? 0);
+      } catch {
+        // Silently fail — badge not visible is not critical
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchKey]);
+
+  // Poll every 30s for new notifications
+  useEffect(() => {
+    const interval = setInterval(() => setFetchKey((k) => k + 1), 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { count, refetch };
 }

@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nest
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateProfileDto, UpdateRoleDto } from './dto/update-profile.dto';
 import { UserProfileDto } from './dto/user-profile.dto';
-import { UserRole } from '@prisma/client';
+import { AccountStatus, UserRole } from '@prisma/client';
 
 // Fields never returned in any response
 const EXCLUDED_FIELDS = {
@@ -19,7 +19,7 @@ const USER_SELECT = {
   phone: true,
   role: true,
   isEmailVerified: true,
-  isActive: true,
+  accountStatus: true,
   avatarUrl: true,
   businessName: true,
   bankAccountName: true,

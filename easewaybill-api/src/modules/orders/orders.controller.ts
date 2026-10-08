@@ -1,4 +1,17 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -36,14 +49,24 @@ export class OrdersController {
       'Any user can create orders — the same user can be a buyer on other orders. ' +
       'Calculates platform fee (5%) and rider payout from delivery fee.',
   })
+  @UseInterceptors(
+    FilesInterceptor('images', 5, {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+        files: 5,
+      },
+    }),
+  )
   @ApiResponse({ status: 201, type: OrderResponseDto, description: 'Order created successfully' })
   @ApiResponse({ status: 400, description: 'Validation error — check required fields' })
   @ApiResponse({ status: 401, description: 'Unauthorised — missing or invalid token' })
   async create(
     @Body() dto: CreateOrderDto,
     @CurrentUser() user: AuthenticatedUser,
+    @UploadedFiles() images: Express.Multer.File[],
   ): Promise<OrderResponseDto> {
-    return this.ordersService.create(dto, user);
+    return this.ordersService.create(dto, user, images);
   }
 
   // ── GET /orders ──────────────────────────────────────────────────

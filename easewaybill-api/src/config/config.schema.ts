@@ -27,9 +27,16 @@ export const configValidationSchema = Joi.object({
   CLOUDINARY_API_KEY: Joi.string().optional().allow(''),
   CLOUDINARY_API_SECRET: Joi.string().optional().allow(''),
 
-  SMTP_HOST: Joi.string().optional().allow(''),
-  SMTP_PORT: Joi.number().optional(),
-  SMTP_USER: Joi.string().optional().allow(''),
-  SMTP_PASS: Joi.string().optional().allow(''),
-  SMTP_FROM: Joi.string().optional().allow(''),
+  SMTP_HOST: Joi.string().required(),
+  SMTP_PORT: Joi.number().default(587),
+  SMTP_SECURE: Joi.boolean().default(false),
+  SMTP_USER: Joi.string().required(),
+  SMTP_PASS: Joi.string().required(),
+
+  EMAIL_FROM: Joi.string().email().required(),
+  EMAIL_FROM_NAME: Joi.string().default('EaseWaybill'),
+
+  JWT_EMAIL_VERIFICATION_SECRET: Joi.string().required(),
+  JWT_EMAIL_VERIFICATION_EXPIRES_IN: Joi.string().default('24h'),
+  FRONTEND_URL: Joi.string().uri().optional(),
 });

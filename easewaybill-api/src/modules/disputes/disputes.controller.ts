@@ -1,14 +1,99 @@
+// import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+// import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+// import { DisputesService } from './disputes.service';
+// import { RaiseDisputeDto } from './dto/raise-dispute.dto';
+// import { ResolveDisputeDto } from './dto/resolve-dispute.dto';
+// import { DisputeResponseDto } from './dto/dispute-response.dto';
+// import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+// import { RolesGuard } from '../../common/guards/roles.guard';
+// import { Roles } from '../../common/decorators/roles.decorator';
+// import { CurrentUser } from '../../common/decorators/current-user.decorator';
+// import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
+// import { UserRole, DisputeStatus } from '@prisma/client';
+
+// @ApiTags('disputes')
+// @ApiBearerAuth('access-token')
+// @UseGuards(JwtAuthGuard, RolesGuard)
+// @Controller()
+// export class DisputesController {
+//   constructor(private readonly disputesService: DisputesService) {}
+
+//   // ── POST /orders/:id/dispute ──────────────────────────────────────
+//   @Post('orders/:id/dispute')
+//   @Roles(UserRole.USER)
+//   @ApiOperation({
+//     summary: '[BUYER] Raise a dispute on a delivered order',
+//     description: 'Only the buyer can raise a dispute. Order must be in DELIVERED status.',
+//   })
+//   @ApiResponse({ status: 201, type: DisputeResponseDto })
+//   @ApiResponse({ status: 400, description: 'Order not delivered or dispute already exists' })
+//   @ApiResponse({ status: 403, description: 'Only buyer can raise disputes' })
+//   @ApiResponse({ status: 404, description: 'Order not found' })
+//   async raise(
+//     @Param('id') orderId: string,
+//     @Body() dto: RaiseDisputeDto,
+//     @CurrentUser() user: AuthenticatedUser,
+//   ): Promise<DisputeResponseDto> {
+//     return this.disputesService.raise(orderId, dto, user);
+//   }
+
+//   // ── PATCH /orders/:id/dispute ─────────────────────────────────────
+//   @Patch('orders/:id/dispute')
+//   @Roles(UserRole.ADMIN)
+//   @ApiOperation({
+//     summary: '[ADMIN] Resolve a dispute',
+//     description:
+//       'RESOLVED_FOR_BUYER → order becomes REFUNDED, escrow refunded. RESOLVED_FOR_SELLER → order becomes COMPLETED, escrow released.',
+//   })
+//   @ApiResponse({ status: 200, type: DisputeResponseDto })
+//   @ApiResponse({ status: 400, description: 'Order not in DISPUTED status or already resolved' })
+//   @ApiResponse({ status: 403, description: 'Only admin can resolve disputes' })
+//   @ApiResponse({ status: 404, description: 'Order or dispute not found' })
+//   async resolve(
+//     @Param('id') orderId: string,
+//     @Body() dto: ResolveDisputeDto,
+//     @CurrentUser() user: AuthenticatedUser,
+//   ): Promise<DisputeResponseDto> {
+//     return this.disputesService.resolve(orderId, dto, user);
+//   }
+
+//   // ── GET /orders/:id/dispute ───────────────────────────────────────
+//   @Get('orders/:id/dispute')
+//   @ApiOperation({ summary: 'Get dispute for an order' })
+//   @ApiResponse({ status: 200, type: DisputeResponseDto })
+//   @ApiResponse({ status: 404, description: 'No dispute found' })
+//   async findOne(
+//     @Param('id') orderId: string,
+//     @CurrentUser() user: AuthenticatedUser,
+//   ): Promise<DisputeResponseDto> {
+//     return this.disputesService.findOne(orderId, user);
+//   }
+
+//   // ── GET /disputes (ADMIN) ─────────────────────────────────────────
+//   @Get('disputes')
+//   @Roles(UserRole.ADMIN)
+//   @ApiOperation({ summary: '[ADMIN] List all disputes' })
+//   @ApiQuery({ name: 'status', required: false })
+//   @ApiResponse({ status: 200, type: [DisputeResponseDto] })
+//   async findAll(@Query('status') status?: string): Promise<DisputeResponseDto[]> {
+//     return this.disputesService.findAll(DisputeStatus[status as keyof typeof DisputeStatus]);
+//   }
+// }
+
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DisputesService } from './disputes.service';
 import { RaiseDisputeDto } from './dto/raise-dispute.dto';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto';
 import { DisputeResponseDto } from './dto/dispute-response.dto';
+import { PaginatedDisputesDto } from './dto/paginated-disputes.dto';
+import { DisputeQueryDto } from './dto/dispute-query.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
+import { UserRole } from '@prisma/client';
 
 @ApiTags('disputes')
 @ApiBearerAuth('access-token')
@@ -19,13 +104,16 @@ export class DisputesController {
 
   // ── POST /orders/:id/dispute ──────────────────────────────────────
   @Post('orders/:id/dispute')
-  @Roles('BUYER' as any)
+  @Roles(UserRole.USER)
   @ApiOperation({
     summary: '[BUYER] Raise a dispute on a delivered order',
     description: 'Only the buyer can raise a dispute. Order must be in DELIVERED status.',
   })
   @ApiResponse({ status: 201, type: DisputeResponseDto })
-  @ApiResponse({ status: 400, description: 'Order not delivered or dispute already exists' })
+  @ApiResponse({
+    status: 400,
+    description: 'Order not delivered, dispute window expired, or dispute already exists',
+  })
   @ApiResponse({ status: 403, description: 'Only buyer can raise disputes' })
   @ApiResponse({ status: 404, description: 'Order not found' })
   async raise(
@@ -38,7 +126,7 @@ export class DisputesController {
 
   // ── PATCH /orders/:id/dispute ─────────────────────────────────────
   @Patch('orders/:id/dispute')
-  @Roles('ADMIN' as any)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: '[ADMIN] Resolve a dispute',
     description:
@@ -58,9 +146,9 @@ export class DisputesController {
 
   // ── GET /orders/:id/dispute ───────────────────────────────────────
   @Get('orders/:id/dispute')
-  @ApiOperation({ summary: 'Get dispute for an order' })
+  @ApiOperation({ summary: 'Get dispute for an order (scoped to buyer/seller/admin)' })
   @ApiResponse({ status: 200, type: DisputeResponseDto })
-  @ApiResponse({ status: 404, description: 'No dispute found' })
+  @ApiResponse({ status: 404, description: 'No dispute found or access denied' })
   async findOne(
     @Param('id') orderId: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -68,13 +156,31 @@ export class DisputesController {
     return this.disputesService.findOne(orderId, user);
   }
 
+  // ── GET /disputes/mine ─────────────────────────────────────────────
+  // This is the endpoint the disputes page should call. Previously missing —
+  // buyers/sellers had no scoped list endpoint at all.
+  @Get('disputes/mine')
+  @ApiOperation({ summary: 'List disputes for the current user (as buyer or seller), paginated' })
+  @ApiResponse({ status: 200, type: PaginatedDisputesDto })
+  async findMyDisputes(
+    @Query() query: DisputeQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<PaginatedDisputesDto> {
+    return this.disputesService.findMyDisputes(user, query.status, query.page, query.pageSize);
+  }
+
   // ── GET /disputes (ADMIN) ─────────────────────────────────────────
   @Get('disputes')
-  @Roles('ADMIN' as any)
-  @ApiOperation({ summary: '[ADMIN] List all disputes' })
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: '[ADMIN] List all disputes, paginated' })
   @ApiQuery({ name: 'status', required: false })
-  @ApiResponse({ status: 200, type: [DisputeResponseDto] })
-  async findAll(@Query('status') status?: string): Promise<DisputeResponseDto[]> {
-    return this.disputesService.findAll(status);
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'pageSize', required: false })
+  @ApiResponse({ status: 200, type: PaginatedDisputesDto })
+  async findAll(
+    @Query() query: DisputeQueryDto,
+    @CurrentUser() admin: AuthenticatedUser,
+  ): Promise<PaginatedDisputesDto> {
+    return this.disputesService.findAllForAdmin(admin, query.status, query.page, query.pageSize);
   }
 }

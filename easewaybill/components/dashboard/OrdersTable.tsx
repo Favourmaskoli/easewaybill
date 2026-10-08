@@ -1,71 +1,40 @@
-// // components/dashboard/OrdersTable.tsx
-// // ================================================================
-// // ORDERS TABLE COMPONENT
-// // ================================================================
-// // Full data table for recent orders. Used on the DESKTOP dashboard.
-// //
-// // Renders a table with columns:
-// //   Order ID | Item | Buyer | Amount | Status | Date | Action
-// //
-// // Props:
-// //   orders     — array of Order objects
-// //   showHeader — whether to show the section header (default: true)
-// //   title      — custom title text (default: "Recent Orders")
-// //   subtitle   — custom subtitle (default: "Your latest 5 orders")
-// // ================================================================
-
 // import React from "react";
 // import Link from "next/link";
 // import { Eye } from "lucide-react";
 // import SectionHeader from "@/components/ui/SectionHeader";
 // import StatusBadge from "@/components/ui/StatusBadge";
 // import type { Order } from "@/lib/mock-data";
+// import { useOrders } from "@/lib/hooks/useOrders";
 
 // interface OrdersTableProps {
-//   /** Array of order objects to render in the table */
-//   orders: Order[];
-//   /** Whether to show the title/subtitle header row */
 //   showHeader?: boolean;
-//   /** Title text for the header */
 //   title?: string;
-//   /** Subtitle text for the header */
 //   subtitle?: string;
-//   /** "View All" link URL */
 //   viewAllHref?: string;
 // }
 
-// /** Column definitions for the table */
 // const columns = [
-//   { key: "id",     label: "Order ID" },
-//   { key: "item",   label: "Item"     },
-//   { key: "buyer",  label: "Buyer"    },
-//   { key: "amount", label: "Amount"   },
-//   { key: "status", label: "Status"   },
-//   { key: "date",   label: "Date"     },
+//   { key: "id", label: "Order ID" },
+//   { key: "item", label: "Item" },
+//   { key: "buyer", label: "Buyer" },
+//   { key: "amount", label: "Amount" },
+//   { key: "status", label: "Status" },
+//   { key: "date", label: "Date" },
 // ] as const;
 
 // export default function OrdersTable({
-//   orders,
 //   showHeader = true,
 //   title = "Recent Orders",
-//   subtitle = "Your latest 5 orders",
+//   subtitle = "Your latest orders",
 //   viewAllHref = "/dashboard/orders",
 // }: OrdersTableProps) {
+//   const { orders, total, isLoading } = useOrders({
+//     limit: 50,
+//   });
 //   return (
-//     <section
-//       className="clay-card !p-0 overflow-hidden"
-//       aria-label={title}
-//     >
-//       {/* ── Section Header ─────────────────────────────────── */}
+//     <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 //       {showHeader && (
-//         <div
-//           className="px-5 py-4 border-b border-cream-300/50"
-//           style={{
-//             background:
-//               "linear-gradient(145deg, var(--color-olive-50)," +
-//               " var(--color-cream-200))",
-//           }}
-//         >
+//         <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
 //           <SectionHeader
 //             title={title}
 //             subtitle={subtitle}
@@ -75,97 +44,61 @@
 //         </div>
 //       )}
 
-//       {/* ── Table ──────────────────────────────────────────── */}
 //       <div className="overflow-x-auto">
 //         <table className="w-full">
-
-//           {/* Table head */}
 //           <thead>
-//             <tr
-//               style={{
-//                 background:
-//                   "linear-gradient(145deg, var(--color-cream-100)," +
-//                   " var(--color-cream-200))",
-//               }}
-//             >
+//             <tr className="bg-gray-50">
 //               {columns.map((col) => (
 //                 <th
 //                   key={col.key}
-//                   scope="col"
-//                   className="text-left text-[11px] font-bold text-olive-500
+//                   className="text-left text-[11px] font-bold text-gray-500
 //                              uppercase tracking-wider px-5 py-3.5"
 //                 >
 //                   {col.label}
 //                 </th>
 //               ))}
-//               {/* Action column — empty header */}
-//               <th scope="col" className="px-5 py-3.5 w-10" />
+//               <th className="px-5 py-3.5 w-10" />
 //             </tr>
 //           </thead>
 
-//           {/* Table body */}
-//           <tbody className="divide-y divide-cream-300/50">
+//           <tbody className="divide-y divide-gray-50">
 //             {orders.map((order) => (
 //               <tr
 //                 key={order.id}
-//                 className="transition-all duration-200 cursor-pointer
-//                 border-l-2 border-l-transparent
-//                 hover:border-l-olive-500
-//                 hover:bg-olive-100/60"
+//                 className="hover:bg-green-50/30 transition-colors cursor-pointer"
 //               >
-//                 {/* Order ID */}
 //                 <td className="px-5 py-4">
-//                   <span className="text-sm font-bold text-olive-600">
+//                   <span className="text-sm font-bold text-green-600">
 //                     {order.id}
 //                   </span>
 //                 </td>
-
-//                 {/* Item name */}
 //                 <td className="px-5 py-4">
-//                   <span
-//                     className="text-sm font-medium text-olive-800
-//                                truncate max-w-[160px] block"
-//                   >
-//                     {order.item}
+//                   <span className="text-sm font-medium text-gray-800 truncate max-w-[160px] block">
+//                     {order.items.map((item) => item.name).join(", ")}
 //                   </span>
 //                 </td>
-
-//                 {/* Buyer */}
 //                 <td className="px-5 py-4">
-//                   <span className="text-sm text-olive-600">
-//                     {order.buyer}
+//                   <span className="text-sm text-gray-600">{order.buyerName}</span>
+//                 </td>
+//                 <td className="px-5 py-4">
+//                   <span className="text-sm font-semibold text-gray-800">
+//                     {order.itemPrice}
 //                   </span>
 //                 </td>
-
-//                 {/* Amount */}
-//                 <td className="px-5 py-4">
-//                   <span className="text-sm font-semibold text-olive-800">
-//                     {order.amount}
-//                   </span>
-//                 </td>
-
-//                 {/* Status badge */}
 //                 <td className="px-5 py-4">
 //                   <StatusBadge
 //                     label={order.status}
-//                     colorClass={order.statusColor}
+//                     colorClass={order.status}
 //                   />
 //                 </td>
-
-//                 {/* Date */}
 //                 <td className="px-5 py-4">
-//                   <time className="text-xs text-olive-400">
-//                     {order.date}
-//                   </time>
+//                   <time className="text-xs text-gray-400">{order.createdAt}</time>
 //                 </td>
-
-//                 {/* View action */}
 //                 <td className="px-5 py-4">
 //                   <Link
 //                     href={`/dashboard/orders/${order.id}`}
-//                     className="clay-inset p-1.5 text-olive-500
-//                                hover:text-olive-800 rounded-xl
-//                                transition-colors inline-flex"
+//                     className="p-1.5 text-gray-400 hover:text-green-600
+//                                rounded-lg transition-colors inline-flex"
 //                     aria-label={`View order ${order.id}`}
 //                   >
 //                     <Eye size={15} />
@@ -176,10 +109,15 @@
 //           </tbody>
 //         </table>
 
-//         {/* ── Empty State ──────────────────────────────────── */}
 //         {orders.length === 0 && (
-//           <div className="py-12 text-center">
-//             <p className="text-sm text-olive-400">No orders found</p>
+//           <div className="py-16 text-center">
+//             <p className="text-sm text-gray-400 mb-2">No orders yet</p>
+//             <Link
+//               href="/dashboard/orders/create"
+//               className="text-sm text-green-600 font-semibold hover:underline"
+//             >
+//               Create your first order →
+//             </Link>
 //           </div>
 //         )}
 //       </div>
@@ -189,13 +127,14 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye } from "lucide-react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import StatusBadge from "@/components/ui/StatusBadge";
-import type { Order } from "@/lib/mock-data";
+import type { Order } from "@/lib/types/api.types";
+import { useOrders } from "@/lib/hooks/useOrders";
 
 interface OrdersTableProps {
-  orders: Order[];
   showHeader?: boolean;
   title?: string;
   subtitle?: string;
@@ -211,13 +150,47 @@ const columns = [
   { key: "date", label: "Date" },
 ] as const;
 
+const SKELETON_ROWS = 5;
+
+function formatOrderDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso; // fallback if ever malformed
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default function OrdersTable({
-  orders,
   showHeader = true,
   title = "Recent Orders",
   subtitle = "Your latest orders",
   viewAllHref = "/dashboard/orders",
 }: OrdersTableProps) {
+  const router = useRouter();
+  const { orders, total, isLoading, error } = useOrders({
+    limit: 50,
+  });
+
+  const handleRowClick = (orderId: string) => {
+    router.push(`/dashboard/orders/${orderId}`);
+  };
+
+  const handleRowKeyDown = (
+    event: React.KeyboardEvent<HTMLTableRowElement>,
+    orderId: string,
+  ) => {
+    // Table rows aren't natively focusable/actionable, so Enter/Space need
+    // to be wired manually to match the click behavior for keyboard users.
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleRowClick(orderId);
+    }
+  };
+
+  const showEmptyState = !isLoading && !error && orders.length === 0;
+
   return (
     <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {showHeader && (
@@ -238,65 +211,108 @@ export default function OrdersTable({
               {columns.map((col) => (
                 <th
                   key={col.key}
+                  scope="col"
                   className="text-left text-[11px] font-bold text-gray-500
                              uppercase tracking-wider px-5 py-3.5"
                 >
                   {col.label}
                 </th>
               ))}
-              <th className="px-5 py-3.5 w-10" />
+              <th scope="col" className="px-5 py-3.5 w-10">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-50">
-            {orders.map((order) => (
-              <tr
-                key={order.id}
-                className="hover:bg-green-50/30 transition-colors cursor-pointer"
-              >
-                <td className="px-5 py-4">
-                  <span className="text-sm font-bold text-green-600">
-                    {order.id}
-                  </span>
-                </td>
-                <td className="px-5 py-4">
-                  <span className="text-sm font-medium text-gray-800 truncate max-w-[160px] block">
-                    {order.item}
-                  </span>
-                </td>
-                <td className="px-5 py-4">
-                  <span className="text-sm text-gray-600">{order.buyer}</span>
-                </td>
-                <td className="px-5 py-4">
-                  <span className="text-sm font-semibold text-gray-800">
-                    {order.amount}
-                  </span>
-                </td>
-                <td className="px-5 py-4">
-                  <StatusBadge
-                    label={order.status}
-                    colorClass={order.statusColor}
-                  />
-                </td>
-                <td className="px-5 py-4">
-                  <time className="text-xs text-gray-400">{order.date}</time>
-                </td>
-                <td className="px-5 py-4">
-                  <Link
-                    href={`/dashboard/orders/${order.id}`}
-                    className="p-1.5 text-gray-400 hover:text-green-600
-                               rounded-lg transition-colors inline-flex"
-                    aria-label={`View order ${order.id}`}
-                  >
-                    <Eye size={15} />
-                  </Link>
-                </td>
-              </tr>
-            ))}
+            {isLoading &&
+              Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+                <tr key={`skeleton-${i}`} aria-hidden="true">
+                  {columns.map((col) => (
+                    <td key={col.key} className="px-5 py-4">
+                      <div className="h-3.5 bg-gray-100 rounded animate-pulse w-3/4" />
+                    </td>
+                  ))}
+                  <td className="px-5 py-4">
+                    <div className="h-3.5 w-3.5 bg-gray-100 rounded animate-pulse" />
+                  </td>
+                </tr>
+              ))}
+
+            {!isLoading &&
+              !error &&
+              orders.map((order: Order) => (
+                <tr
+                  key={order.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleRowClick(order.id)}
+                  onKeyDown={(e) => handleRowKeyDown(e, order.id)}
+                  className="hover:bg-green-50/30 transition-colors cursor-pointer
+                             focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:ring-inset"
+                >
+                  <td className="px-5 py-4">
+                    <span className="text-sm font-bold text-green-600">
+                      {order.trackingCode}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className="text-sm font-medium text-gray-800 truncate max-w-[160px] block">
+                      {order.items?.length
+                        ? order.items.map((item) => item.name).join(", ")
+                        : "—"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className="text-sm text-gray-600">
+                      {order.buyerName ?? order.buyerEmail ?? "—"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className="text-sm font-semibold text-gray-800">
+                      {order.totalAmount}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <StatusBadge
+                      label={order.status}
+                      colorClass={order.status}
+                    />
+                  </td>
+                  <td className="px-5 py-4">
+                    <time
+                      dateTime={order.createdAt}
+                      className="text-xs text-gray-400"
+                    >
+                      {formatOrderDate(order.createdAt)}
+                    </time>
+                  </td>
+                  <td className="px-5 py-4">
+                    {/* stopPropagation so the icon's own navigation doesn't
+                        double-fire the row's onClick as well */}
+                    <Link
+                      href={`/dashboard/orders/${order.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-1.5 text-gray-400 hover:text-green-600
+                                 rounded-lg transition-colors inline-flex"
+                      aria-label={`View order ${order.id}`}
+                    >
+                      <Eye size={15} />
+                    </Link>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
 
-        {orders.length === 0 && (
+        {error && (
+          <div className="py-16 text-center">
+            <p className="text-sm text-red-500 mb-1">Couldn't load orders</p>
+            <p className="text-xs text-gray-400">{error}</p>
+          </div>
+        )}
+
+        {showEmptyState && (
           <div className="py-16 text-center">
             <p className="text-sm text-gray-400 mb-2">No orders yet</p>
             <Link
@@ -308,6 +324,12 @@ export default function OrdersTable({
           </div>
         )}
       </div>
+
+      {!isLoading && !error && total > 0 && (
+        <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
+          Showing {orders.length} of {total} order{total === 1 ? "" : "s"}
+        </div>
+      )}
     </section>
   );
 }

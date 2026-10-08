@@ -1,3 +1,56 @@
+// import {
+//   IsEmail,
+//   IsNotEmpty,
+//   IsOptional,
+//   IsString,
+//   Matches,
+//   MaxLength,
+//   MinLength,
+//   Equals,
+// } from 'class-validator';
+// import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+// export class RegisterDto {
+//   @ApiProperty({ example: 'john@example.com' })
+//   @IsEmail({}, { message: 'Please provide a valid email address' })
+//   @IsNotEmpty()
+//   declare email: string;
+
+//   @ApiProperty({ example: 'John' })
+//   @IsString()
+//   @IsNotEmpty()
+//   @MaxLength(50)
+//   declare firstName: string;
+
+//   @ApiProperty({ example: 'Doe' })
+//   @IsString()
+//   @IsNotEmpty()
+//   @MaxLength(50)
+//   declare lastName: string;
+
+//   @ApiProperty({ example: 'SecurePass123!' })
+//   @IsString()
+//   @MinLength(8, { message: 'Password must be at least 8 characters' })
+//   @MaxLength(64)
+//   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/, {
+//     message: 'Password must contain uppercase, lowercase, a number, and a special character',
+//   })
+//   declare password: string;
+
+//   @ApiPropertyOptional({ example: '+2348012345678' })
+//   @IsOptional()
+//   @IsString()
+//   @MaxLength(20)
+//   phone?: string;
+
+//   @ApiProperty({
+//     example: true,
+//     description: 'Must be true — user must agree to the current Terms & Conditions to register.',
+//   })
+//   @Equals(true, { message: 'You must accept the Terms & Conditions to register' })
+//   declare acceptedTerms: boolean;
+// }
+
 import {
   IsEmail,
   IsNotEmpty,
@@ -6,6 +59,7 @@ import {
   Matches,
   MaxLength,
   MinLength,
+  Equals,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -41,4 +95,11 @@ export class RegisterDto {
   @IsString()
   @MaxLength(20)
   phone?: string;
+
+  @ApiProperty({
+    example: true,
+    description: 'Must be true — user must agree to the current Terms & Conditions to register.',
+  })
+  @Equals(true, { message: 'You must accept the Terms & Conditions to register' })
+  declare acceptedTerms: boolean;
 }

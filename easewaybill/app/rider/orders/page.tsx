@@ -12,6 +12,7 @@ import {
   RefreshCw,
   ChevronRight,
   Navigation,
+  ScanLine,
 } from "lucide-react";
 import { useRiderOrders } from "@/lib/hooks/useRiderOrders";
 import { ordersApi } from "@/lib/api/orders.api";
@@ -41,10 +42,13 @@ const STATUS_FILTERS = [
   { value: "DELIVERED", label: "Delivered" },
 ];
 
-const STATUS_META: Record<string, { label: string; bg: string; color: string }> = {
-  SHIPPED:     { label: "Assigned",    bg: "#fef3c7", color: "#92400e" },
-  IN_TRANSIT:  { label: "In Transit",  bg: "#dbeafe", color: "#1e40af" },
-  DELIVERED:   { label: "Delivered",   bg: "#dcfce7", color: "#166534" },
+const STATUS_META: Record<
+  string,
+  { label: string; bg: string; color: string }
+> = {
+  SHIPPED: { label: "Assigned", bg: "#fef3c7", color: "#92400e" },
+  IN_TRANSIT: { label: "In Transit", bg: "#dbeafe", color: "#1e40af" },
+  DELIVERED: { label: "Delivered", bg: "#dcfce7", color: "#166534" },
 };
 
 // Maps current status → the action the rider should take next
@@ -76,7 +80,11 @@ function getRiderAction(status: string): RiderAction | null {
 // ================================================================
 
 function RiderStatusBadge({ status }: { status: string }) {
-  const meta = STATUS_META[status] ?? { label: status, bg: "#f3f4f6", color: "#374151" };
+  const meta = STATUS_META[status] ?? {
+    label: status,
+    bg: "#f3f4f6",
+    color: "#374151",
+  };
   return (
     <span
       style={{
@@ -242,9 +250,18 @@ function RiderEmptyState({ filtered }: { filtered: boolean }) {
           marginBottom: "6px",
         }}
       >
-        {filtered ? "No orders match your filter" : "No deliveries assigned yet"}
+        {filtered
+          ? "No orders match your filter"
+          : "No deliveries assigned yet"}
       </p>
-      <p style={{ fontSize: "13px", color: "#9ca3af", maxWidth: "280px", margin: "0 auto" }}>
+      <p
+        style={{
+          fontSize: "13px",
+          color: "#9ca3af",
+          maxWidth: "280px",
+          margin: "0 auto",
+        }}
+      >
         {filtered
           ? "Try changing your filter or search term."
           : "You don't have any assigned deliveries yet. Check back when an admin assigns an order to you."}
@@ -323,21 +340,49 @@ function RiderOrderCard({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
-          <MapPin size={12} color="#22c55e" style={{ flexShrink: 0, marginTop: "1px" }} />
+          <MapPin
+            size={12}
+            color="#22c55e"
+            style={{ flexShrink: 0, marginTop: "1px" }}
+          />
           <div>
-            <p style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <p
+              style={{
+                fontSize: "9px",
+                fontWeight: 700,
+                color: "#9ca3af",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}
+            >
               Pickup
             </p>
-            <p style={{ fontSize: "12px", color: "#374151" }}>{order.pickupAddress}</p>
+            <p style={{ fontSize: "12px", color: "#374151" }}>
+              {order.pickupAddress}
+            </p>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
-          <Navigation size={12} color="#f59e0b" style={{ flexShrink: 0, marginTop: "1px" }} />
+          <Navigation
+            size={12}
+            color="#f59e0b"
+            style={{ flexShrink: 0, marginTop: "1px" }}
+          />
           <div>
-            <p style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <p
+              style={{
+                fontSize: "9px",
+                fontWeight: 700,
+                color: "#9ca3af",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}
+            >
               Delivery
             </p>
-            <p style={{ fontSize: "12px", color: "#374151" }}>{order.deliveryAddress}</p>
+            <p style={{ fontSize: "12px", color: "#374151" }}>
+              {order.deliveryAddress}
+            </p>
           </div>
         </div>
       </div>
@@ -352,17 +397,31 @@ function RiderOrderCard({
         }}
       >
         <div>
-          <p style={{ fontSize: "10px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>
+          <p
+            style={{
+              fontSize: "10px",
+              color: "#9ca3af",
+              fontWeight: 600,
+              textTransform: "uppercase",
+            }}
+          >
             Buyer
           </p>
           <p style={{ fontSize: "12px", color: "#374151", fontWeight: 500 }}>
             {order.buyer
               ? `${order.buyer.firstName} ${order.buyer.lastName}`
-              : order.buyerName ?? "—"}
+              : (order.buyerName ?? "—")}
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
-          <p style={{ fontSize: "10px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>
+          <p
+            style={{
+              fontSize: "10px",
+              color: "#9ca3af",
+              fontWeight: 600,
+              textTransform: "uppercase",
+            }}
+          >
             Delivery Fee
           </p>
           <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827" }}>
@@ -372,7 +431,7 @@ function RiderOrderCard({
       </div>
 
       {/* Actions */}
-      <div style={{ display: "flex", gap: "8px" }}>
+      {/* <div style={{ display: "flex", gap: "8px" }}>
         <Link
           href={`/dashboard/orders/${order.id}`}
           style={{
@@ -440,6 +499,98 @@ function RiderOrderCard({
             Delivery Completed
           </div>
         )}
+      </div> */}
+      {/* Actions */}
+      <div style={{ display: "flex", gap: "8px" }}>
+        <Link
+          href={`/dashboard/orders/${order.id}`}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "4px",
+            padding: "9px",
+            borderRadius: "9px",
+            border: "1px solid #e5e7eb",
+            background: "white",
+            color: "#6b7280",
+            fontSize: "12px",
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          View Details
+        </Link>
+
+        <Link
+          href={`/rider/orders/${order.id}`}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "4px",
+            padding: "9px",
+            borderRadius: "9px",
+            border: "1px solid #fde68a",
+            background: "#fffbeb",
+            color: "#92400e",
+            fontSize: "12px",
+            fontWeight: 700,
+            textDecoration: "none",
+          }}
+        >
+          <ScanLine size={13} />
+          Scan
+        </Link>
+
+        {action && order.status !== "DELIVERED" && (
+          <button
+            onClick={() => onAction(order.id, action.nextStatus)}
+            disabled={acting}
+            style={{
+              flex: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "4px",
+              padding: "9px",
+              borderRadius: "9px",
+              border: `1px solid ${action.border}`,
+              background: action.bg,
+              color: action.color,
+              fontSize: "12px",
+              fontWeight: 700,
+              cursor: acting ? "not-allowed" : "pointer",
+              opacity: acting ? 0.6 : 1,
+            }}
+          >
+            <Truck size={13} />
+            {acting ? "Updating..." : action.label}
+          </button>
+        )}
+
+        {order.status === "DELIVERED" && (
+          <div
+            style={{
+              flex: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "4px",
+              padding: "9px",
+              borderRadius: "9px",
+              background: "#f0fdf4",
+              color: "#166534",
+              fontSize: "12px",
+              fontWeight: 700,
+            }}
+          >
+            <CheckCircle size={13} />
+            Delivery Completed
+          </div>
+        )}
       </div>
     </div>
   );
@@ -458,7 +609,8 @@ function SkeletonRow() {
             style={{
               height: "14px",
               borderRadius: "6px",
-              background: "linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)",
+              background:
+                "linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)",
               backgroundSize: "200% 100%",
               animation: "shimmer 1.5s infinite",
               width: i === 1 ? "80px" : i === 2 ? "120px" : "60px",
@@ -522,7 +674,14 @@ export default function RiderOrdersPage() {
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "4px",
+            }}
+          >
             <div
               style={{
                 width: "36px",
@@ -536,9 +695,7 @@ export default function RiderOrdersPage() {
             >
               <Truck size={19} color="white" />
             </div>
-            <h1
-              style={{ fontSize: "22px", fontWeight: 700, color: "#111827" }}
-            >
+            <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#111827" }}>
               My Deliveries
             </h1>
           </div>
@@ -630,8 +787,7 @@ export default function RiderOrdersPage() {
                 fontSize: "11px",
                 fontWeight: 600,
                 cursor: "pointer",
-                border:
-                  statusFilter === f.value ? "none" : "1px solid #e5e7eb",
+                border: statusFilter === f.value ? "none" : "1px solid #e5e7eb",
                 background: statusFilter === f.value ? "#f59e0b" : "white",
                 color: statusFilter === f.value ? "white" : "#4b5563",
                 transition: "all 0.15s",
@@ -680,7 +836,9 @@ export default function RiderOrdersPage() {
       {/* ── MOBILE: Cards ─────────────────────────────────────────── */}
       <div className="lg:hidden">
         {isLoading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+          >
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -725,8 +883,21 @@ export default function RiderOrdersPage() {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6" }}>
-                  {["Tracking", "Status", "Buyer", "Pickup", "Delivery", "Fee", "Actions"].map((col) => (
+                <tr
+                  style={{
+                    background: "#f9fafb",
+                    borderBottom: "1px solid #f3f4f6",
+                  }}
+                >
+                  {[
+                    "Tracking",
+                    "Status",
+                    "Buyer",
+                    "Pickup",
+                    "Delivery",
+                    "Fee",
+                    "Actions",
+                  ].map((col) => (
                     <th
                       key={col}
                       style={{
@@ -757,8 +928,21 @@ export default function RiderOrdersPage() {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6" }}>
-                  {["Tracking", "Status", "Buyer", "Pickup", "Delivery", "Fee", "Actions"].map((col) => (
+                <tr
+                  style={{
+                    background: "#f9fafb",
+                    borderBottom: "1px solid #f3f4f6",
+                  }}
+                >
+                  {[
+                    "Tracking",
+                    "Status",
+                    "Buyer",
+                    "Pickup",
+                    "Delivery",
+                    "Fee",
+                    "Actions",
+                  ].map((col) => (
                     <th
                       key={col}
                       style={{
@@ -802,7 +986,13 @@ export default function RiderOrdersPage() {
                         >
                           {order.trackingCode}
                         </p>
-                        <p style={{ fontSize: "11px", color: "#9ca3af", marginTop: "2px" }}>
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: "#9ca3af",
+                            marginTop: "2px",
+                          }}
+                        >
                           {new Date(order.createdAt).toLocaleDateString(
                             "en-NG",
                             { day: "numeric", month: "short" },
@@ -817,10 +1007,16 @@ export default function RiderOrdersPage() {
 
                       {/* Buyer */}
                       <td style={{ padding: "14px 20px" }}>
-                        <p style={{ fontSize: "13px", color: "#374151", fontWeight: 500 }}>
+                        <p
+                          style={{
+                            fontSize: "13px",
+                            color: "#374151",
+                            fontWeight: 500,
+                          }}
+                        >
                           {order.buyer
                             ? `${order.buyer.firstName} ${order.buyer.lastName}`
-                            : order.buyerName ?? "—"}
+                            : (order.buyerName ?? "—")}
                         </p>
                         {order.buyer?.phone && (
                           <p style={{ fontSize: "11px", color: "#9ca3af" }}>
@@ -831,8 +1027,18 @@ export default function RiderOrdersPage() {
 
                       {/* Pickup */}
                       <td style={{ padding: "14px 20px" }}>
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: "5px" }}>
-                          <MapPin size={12} color="#22c55e" style={{ flexShrink: 0, marginTop: "2px" }} />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "5px",
+                          }}
+                        >
+                          <MapPin
+                            size={12}
+                            color="#22c55e"
+                            style={{ flexShrink: 0, marginTop: "2px" }}
+                          />
                           <p
                             style={{
                               fontSize: "12px",
@@ -850,8 +1056,18 @@ export default function RiderOrdersPage() {
 
                       {/* Delivery */}
                       <td style={{ padding: "14px 20px" }}>
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: "5px" }}>
-                          <Navigation size={12} color="#f59e0b" style={{ flexShrink: 0, marginTop: "2px" }} />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "5px",
+                          }}
+                        >
+                          <Navigation
+                            size={12}
+                            color="#f59e0b"
+                            style={{ flexShrink: 0, marginTop: "2px" }}
+                          />
                           <p
                             style={{
                               fontSize: "12px",
@@ -869,14 +1085,26 @@ export default function RiderOrdersPage() {
 
                       {/* Fee */}
                       <td style={{ padding: "14px 20px" }}>
-                        <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827" }}>
+                        <p
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 700,
+                            color: "#111827",
+                          }}
+                        >
                           {formatNaira(order.deliveryFee ?? "0")}
                         </p>
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: "14px 20px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      {/* <td style={{ padding: "14px 20px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
                           <Link
                             href={`/dashboard/orders/${order.id}`}
                             style={{
@@ -896,6 +1124,123 @@ export default function RiderOrdersPage() {
                           >
                             <ChevronRight size={12} />
                             View
+                          </Link>
+
+                          {action && (
+                            <button
+                              onClick={() =>
+                                handleAction(order.id, action.nextStatus)
+                              }
+                              disabled={isActing}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "6px 12px",
+                                borderRadius: "8px",
+                                border: `1px solid ${action.border}`,
+                                background: action.bg,
+                                color: action.color,
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                cursor: isActing ? "not-allowed" : "pointer",
+                                opacity: isActing ? 0.6 : 1,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {isActing ? (
+                                <>
+                                  <div
+                                    style={{
+                                      width: "10px",
+                                      height: "10px",
+                                      border: "2px solid currentColor",
+                                      borderTopColor: "transparent",
+                                      borderRadius: "50%",
+                                      animation: "spin 1s linear infinite",
+                                    }}
+                                  />
+                                  Updating...
+                                </>
+                              ) : (
+                                <>
+                                  <Truck size={11} />
+                                  {action.label}
+                                </>
+                              )}
+                            </button>
+                          )}
+
+                          {order.status === "DELIVERED" && (
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "6px 12px",
+                                borderRadius: "8px",
+                                background: "#f0fdf4",
+                                color: "#166534",
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <CheckCircle size={11} />
+                              Completed
+                            </span>
+                          )}
+                        </div>
+                      </td> */}
+                      {/* Actions */}
+                      <td style={{ padding: "14px 20px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <Link
+                            href={`/dashboard/orders/${order.id}`}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              border: "1px solid #e5e7eb",
+                              background: "white",
+                              color: "#6b7280",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              textDecoration: "none",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <ChevronRight size={12} />
+                            View
+                          </Link>
+
+                          <Link
+                            href={`/rider/orders/${order.id}`}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              border: "1px solid #fde68a",
+                              background: "#fffbeb",
+                              color: "#92400e",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              textDecoration: "none",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <ScanLine size={11} />
+                            Scan
                           </Link>
 
                           {action && (
