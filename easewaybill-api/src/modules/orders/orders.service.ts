@@ -8,7 +8,8 @@ import { PaginatedResult, paginate, buildCursorWhere } from '../../common/dto/pa
 import { validateTransition } from './order-state-machine';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import { detectImageMime } from '../../common/utils/image';
-import { customAlphabet } from 'nanoid';
+// import { customAlphabet } from 'nanoid';
+import { customAlphabet } from '../../common/utils/custom-alphabet';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationEvents, OrderEventPayload } from '../notifications/notifications.events';
 import { EscrowService } from '../escrow/escrow.service';
