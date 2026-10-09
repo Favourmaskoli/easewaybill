@@ -463,7 +463,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-3 gap-6">
           <div className="col-span-2">
-            <OrdersTable orders={mockOrders} />
+            <OrdersTable />
           </div>
           <div className="space-y-6">
             <QuickActionsCard actions={quickActions} />
