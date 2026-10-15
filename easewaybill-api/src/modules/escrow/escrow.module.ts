@@ -3,7 +3,6 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EscrowController } from './escrow.controller';
 import { EscrowService } from './escrow.service';
-import { EscrowProcessor } from './escrow.processor';
 import { ESCROW_QUEUE } from './escrow.constants';
 
 @Module({
@@ -29,7 +28,7 @@ import { ESCROW_QUEUE } from './escrow.constants';
     }),
   ],
   controllers: [EscrowController],
-  providers: [EscrowService, EscrowProcessor],
+  providers: [EscrowService],
   exports: [EscrowService],
 })
 export class EscrowModule {}

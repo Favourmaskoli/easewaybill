@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailService } from './email.service';
-import { EmailProcessor } from './email.processor';
 import { EMAIL_QUEUE } from './email.constants';
 
 @Module({
@@ -26,7 +25,7 @@ import { EMAIL_QUEUE } from './email.constants';
       inject: [ConfigService],
     }),
   ],
-  providers: [EmailService, EmailProcessor],
+  providers: [EmailService],
   exports: [EmailService],
 })
 export class EmailModule {}
