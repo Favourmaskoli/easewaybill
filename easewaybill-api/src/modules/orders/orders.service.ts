@@ -8,13 +8,20 @@ import { PaginatedResult, paginate, buildCursorWhere } from '../../common/dto/pa
 import { validateTransition } from './order-state-machine';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import { detectImageMime } from '../../common/utils/image';
-import { customAlphabet } from 'nanoid';
+// import { customAlphabet } from 'nanoid';
+import { randomInt } from 'node:crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationEvents, OrderEventPayload } from '../notifications/notifications.events';
 import { EscrowService } from '../escrow/escrow.service';
 import { Prisma, OrderStatus, EscrowStatus } from '@prisma/client';
 
-const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8);
+// const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8);
+const CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+const nanoid = (size = 8): string =>
+  Array.from({ length: size }, () => CODE_ALPHABET.charAt(randomInt(CODE_ALPHABET.length))).join(
+    '',
+  );
 
 const PLATFORM_FEE_PERCENT = 0.05;
 const RIDER_DELIVERY_PERCENT = 0.9;
