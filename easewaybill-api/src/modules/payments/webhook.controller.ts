@@ -23,8 +23,6 @@ export class WebhookController {
     // Raw body is required for HMAC signature verification
     // Set up in main.ts via rawBody: true
     const rawBody = req.rawBody?.toString('utf-8') ?? '';
-    this.logger.log(`Signature: ${signature}`);
-    this.logger.log(`Raw body: ${rawBody}`);
     this.logger.log('Webhook received');
 
     return this.webhookService.handleWebhook(rawBody, signature);
