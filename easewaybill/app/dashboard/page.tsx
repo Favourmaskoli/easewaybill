@@ -228,7 +228,7 @@ function buildPendingActions(orders: Order[]): PendingAction[] {
 // ── Map real orders → mock Order shape for existing components ─
 function toMockOrders(orders: Order[]): MockOrder[] {
   return orders.map((o) => ({
-    id: o.trackingCode,
+    id: o.id,
     item: o.description,
     buyer: o.buyer ? `${o.buyer.firstName} ${o.buyer.lastName}` : o.buyerEmail,
     amount: formatNaira(o.totalAmount),
