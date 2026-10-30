@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -19,10 +11,7 @@ import { PaymentsService } from './payments.service';
 import { TransferService } from './transfer.service';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { InitiateTransferDto } from './dto/initiate-transfer.dto';
-import {
-  InitiatePaymentResponseDto,
-  PaymentRecordDto,
-} from './dto/payment-response.dto';
+import { InitiatePaymentResponseDto, PaymentRecordDto } from './dto/payment-response.dto';
 import { TransferRecordDto } from './dto/transfer-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -49,6 +38,8 @@ export class PaymentsController {
       'Any authenticated user can pay for an order where their account ' +
       'email matches buyerEmail on the order, or where they are the linked buyer. ' +
       'Returns authorizationUrl — redirect the buyer to this URL to complete payment on Paystack. ' +
+      'If a recent pending attempt exists it is settled first and its checkout link is reused, ' +
+      'so a buyer cannot accidentally pay twice. ' +
       'After payment, Paystack sends a webhook to /payments/webhook which updates ' +
       'the order to PAID and triggers escrow hold. ' +
       'The frontend also calls /payments/verify/:reference on callback as a fallback.',
@@ -57,11 +48,11 @@ export class PaymentsController {
   @ApiResponse({
     status: 400,
     description:
-      'Order not in AWAITING_PAYMENT status, or a successful payment already exists',
+      'Order not in AWAITING_PAYMENT status, a successful payment already exists, or invalid callback URL',
   })
   @ApiResponse({ status: 401, description: 'Unauthorised — missing or invalid token' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  // ✅ No @Roles guard — any authenticated user can pay for an order
+  // No @Roles guard — any authenticated user can pay for an order
   // addressed to their email, regardless of their account role field.
   // Authorization is enforced inside PaymentsService.initiatePayment()
   // by checking order.buyerId === user.id OR order.buyerEmail === user.email
@@ -97,40 +88,32 @@ export class PaymentsController {
     @Query('limit') limit?: number,
     @Query('cursor') cursor?: string,
   ): Promise<PaginatedResult<PaymentRecordDto & { channelLabel: string }>> {
-    return this.paymentsService.getHistory(
-      user,
-      limit ? Number(limit) : 20,
-      cursor,
-    );
+    return this.paymentsService.getHistory(user, limit ? Number(limit) : 20, cursor);
   }
 
   // ── GET /payments/verify/:reference ──────────────────────────────
-  // NOTE: This endpoint intentionally has no @Roles guard.
-  // It is protected by JwtAuthGuard (token required) but open to
-  // any authenticated user. The frontend calls this on the Paystack
-  // callback URL to verify payment and update order status to PAID
-  // without waiting for the webhook. Both webhook and verify are
-  // idempotent — calling both is safe.
+  // No @Roles guard: protected by JwtAuthGuard, and the service checks that
+  // the caller is the buyer, the seller or an admin of the order. The
+  // frontend calls this on the Paystack callback URL. It runs the same
+  // settlement path as the webhook, so calling both is safe (idempotent).
   @Get('verify/:reference')
   @ApiOperation({
     summary: 'Verify payment by Paystack reference — callback fallback',
     description:
-      'Directly calls Paystack to verify a payment reference. ' +
-      'Use this as a reliable fallback when the buyer returns from Paystack ' +
-      'and the webhook has not yet arrived. ' +
-      'If Paystack confirms success, this endpoint atomically updates both ' +
-      'the PaymentRecord (status → SUCCESS) and the Order (status → PAID). ' +
-      'Safe to call multiple times — idempotent.',
+      'Directly calls Paystack to verify a payment reference and runs the same ' +
+      'settlement as the webhook: PaymentRecord → SUCCESS, Order → PAID, escrow HOLDING, ' +
+      'auto-release scheduled. Status is UNDER_REVIEW if the payment needs manual ' +
+      'reconciliation (e.g. amount mismatch). Safe to call multiple times — idempotent.',
   })
   @ApiParam({ name: 'reference', example: 'EW-PAY-ABC123DEF456GH78' })
   @ApiResponse({
     status: 200,
     description: 'Verification result with payment status and channel label',
   })
-  @ApiResponse({ status: 400, description: 'Paystack verification failed' })
   @ApiResponse({ status: 404, description: 'Reference not found in our records' })
   async verify(
     @Param('reference') reference: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<{
     reference: string;
     status: string;
@@ -140,7 +123,7 @@ export class PaymentsController {
     orderId: string;
     message: string;
   }> {
-    return this.paymentsService.verifyByReference(reference);
+    return this.paymentsService.verifyByReference(reference, user);
   }
 
   // ── GET /payments/order/:orderId ──────────────────────────────────
@@ -150,7 +133,7 @@ export class PaymentsController {
     description:
       'Returns all payment attempts for an order with their status, ' +
       'channel labels, and whether the order is fully paid. ' +
-      'Useful for checking payment state without calling Paystack directly.',
+      'Only the buyer, seller or an admin can view it.',
   })
   @ApiParam({ name: 'orderId', description: 'Order CUID' })
   @ApiResponse({
@@ -160,6 +143,7 @@ export class PaymentsController {
   @ApiResponse({ status: 404, description: 'Order not found' })
   async getPaymentStatus(
     @Param('orderId') orderId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<{
     orderId: string;
     trackingCode: string;
@@ -169,21 +153,24 @@ export class PaymentsController {
     latestStatus: string;
     isPaid: boolean;
   }> {
-    return this.paymentsService.getPaymentStatus(orderId);
+    return this.paymentsService.getPaymentStatus(orderId, user);
   }
 
   // ── GET /payments/orders/:orderId ─────────────────────────────────
   @Get('orders/:orderId')
   @ApiOperation({
     summary: 'Get all payment records for an order',
-    description: 'Returns every PaymentRecord associated with an order, newest first.',
+    description:
+      'Returns every PaymentRecord associated with an order, newest first. ' +
+      'Only the buyer, seller or an admin can view it.',
   })
   @ApiParam({ name: 'orderId' })
   @ApiResponse({ status: 200, type: [PaymentRecordDto] })
   async getByOrder(
     @Param('orderId') orderId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<PaymentRecordDto[]> {
-    return this.paymentsService.getByOrder(orderId);
+    return this.paymentsService.getByOrder(orderId, user);
   }
 
   // ── GET /payments/:reference ──────────────────────────────────────
@@ -194,15 +181,17 @@ export class PaymentsController {
     summary: 'Get a payment record by Paystack reference',
     description:
       'Fetches a single PaymentRecord from our database by reference string. ' +
-      'Does NOT call Paystack — use /payments/verify/:reference for live verification.',
+      'Does NOT call Paystack — use /payments/verify/:reference for live verification. ' +
+      'Only the buyer, seller or an admin can view it.',
   })
   @ApiParam({ name: 'reference', example: 'EW-PAY-ABC123DEF456GH78' })
   @ApiResponse({ status: 200, type: PaymentRecordDto })
   @ApiResponse({ status: 404, description: 'Payment record not found' })
   async getByReference(
     @Param('reference') reference: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<PaymentRecordDto> {
-    return this.paymentsService.getByReference(reference);
+    return this.paymentsService.getByReference(reference, user);
   }
 
   // ── POST /payments/transfer ───────────────────────────────────────
@@ -212,7 +201,7 @@ export class PaymentsController {
     summary: '[ADMIN] Initiate Paystack transfer to seller bank account',
     description:
       'Transfers the seller payout after escrow is RELEASED. ' +
-      'Creates or reuses a Paystack transfer recipient from the seller\'s ' +
+      "Creates or reuses a Paystack transfer recipient from the seller's " +
       'bank account details stored in their profile. ' +
       'Only callable after the order reaches COMPLETED status and escrow is RELEASED. ' +
       'Idempotent — will not create duplicate transfers for the same order.',
@@ -223,9 +212,7 @@ export class PaymentsController {
     description: 'Order not COMPLETED, escrow not RELEASED, or seller bank details missing',
   })
   @ApiResponse({ status: 409, description: 'Transfer already initiated for this order' })
-  async initiateTransfer(
-    @Body() dto: InitiateTransferDto,
-  ): Promise<TransferRecordDto> {
+  async initiateTransfer(@Body() dto: InitiateTransferDto): Promise<TransferRecordDto> {
     return this.transferService.initiateTransfer(dto);
   }
 
@@ -240,9 +227,7 @@ export class PaymentsController {
   })
   @ApiParam({ name: 'orderId' })
   @ApiResponse({ status: 200, type: [TransferRecordDto] })
-  async getTransfers(
-    @Param('orderId') orderId: string,
-  ): Promise<TransferRecordDto[]> {
+  async getTransfers(@Param('orderId') orderId: string): Promise<TransferRecordDto[]> {
     return this.transferService.getByOrder(orderId);
   }
 }

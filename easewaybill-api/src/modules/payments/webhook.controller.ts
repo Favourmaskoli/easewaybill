@@ -11,6 +11,7 @@ import { Logger } from '@nestjs/common';
 export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
   private readonly logger = new Logger(WebhookController.name);
+
   // ── POST /payments/webhook ────────────────────────────────────────
   @Public()
   @Post('webhook')
@@ -20,8 +21,7 @@ export class WebhookController {
     @Req() req: RawBodyRequest<Request>,
     @Headers('x-paystack-signature') signature: string,
   ): Promise<{ received: boolean }> {
-    // Raw body is required for HMAC signature verification
-    // Set up in main.ts via rawBody: true
+    // Raw body is required for HMAC signature verification (rawBody: true in main.ts)
     const rawBody = req.rawBody?.toString('utf-8') ?? '';
     this.logger.log('Webhook received');
 

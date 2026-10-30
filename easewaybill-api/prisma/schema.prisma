@@ -589,6 +589,11 @@ model PaymentRecord {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  needsReview Boolean @default(false)
+  reviewNote  String?
+ 
+  @@index([status, createdAt])
+
   @@index([orderId])
   @@index([reference])
   @@index([status])
