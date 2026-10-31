@@ -1,6 +1,7 @@
 import { Controller, Get, Headers, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { timingSafeEqual } from 'crypto';
 
 import { Public } from '../auth/decorators/public.decorator';
@@ -8,9 +9,11 @@ import { ReconciliationService } from './reconciliation.service';
 import type { ReconcileStats } from './reconciliation.service';
 
 // Called by Vercel Cron (or any external scheduler). Public for the JWT guard,
-// but protected by the CRON_SECRET bearer token instead.
+// but protected by the CRON_SECRET bearer token instead. A strict rate limit
+// slows down anyone trying to guess the secret; the real cron calls it rarely.
 @ApiExcludeController()
 @Public()
+@Throttle({ default: { limit: 10, ttl: 60_000 } })
 @Controller('internal')
 export class ReconcileController {
   constructor(

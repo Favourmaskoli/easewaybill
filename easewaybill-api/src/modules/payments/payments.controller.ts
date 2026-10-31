@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -13,12 +14,46 @@ import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { InitiateTransferDto } from './dto/initiate-transfer.dto';
 import { InitiatePaymentResponseDto, PaymentRecordDto } from './dto/payment-response.dto';
 import { TransferRecordDto } from './dto/transfer-response.dto';
+import { OrderIdParamDto, PaymentHistoryQueryDto, ReferenceParamDto } from './dto/payment-params.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import type { PaginatedResult } from '../../common/dto/pagination.dto';
+
+interface VerifyPaymentResponse {
+  reference: string;
+  status: string;
+  channelLabel: string;
+  amount: number;
+  paidAt: string | null;
+  orderId: string;
+  message: string;
+}
+
+interface PaymentStatusResponse {
+  orderId: string;
+  trackingCode: string;
+  orderStatus: string;
+  escrowStatus: string;
+  payments: (PaymentRecordDto & { channelLabel: string })[];
+  latestStatus: string;
+  isPaid: boolean;
+}
+
+/** Rate limits per client (see ThrottlerModule setup). ttl is in milliseconds. */
+const MINUTE = 60_000;
+const LIMITS = {
+  /** Opens a Paystack transaction: keep tight. */
+  initiate: { default: { limit: 5, ttl: MINUTE } },
+  /** Callback page polls this (about 6 calls); each call may hit Paystack's API. */
+  verify: { default: { limit: 20, ttl: MINUTE } },
+  /** Plain database reads. */
+  read: { default: { limit: 30, ttl: MINUTE } },
+  /** Admin payout trigger. */
+  transfer: { default: { limit: 10, ttl: MINUTE } },
+} as const;
 
 @ApiTags('payments')
 @ApiBearerAuth('access-token')
@@ -32,6 +67,7 @@ export class PaymentsController {
 
   // ── POST /payments/initiate ───────────────────────────────────────
   @Post('initiate')
+  @Throttle(LIMITS.initiate)
   @ApiOperation({
     summary: 'Initiate Paystack payment for an order',
     description:
@@ -52,6 +88,7 @@ export class PaymentsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorised — missing or invalid token' })
   @ApiResponse({ status: 404, description: 'Order not found' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   // No @Roles guard — any authenticated user can pay for an order
   // addressed to their email, regardless of their account role field.
   // Authorization is enforced inside PaymentsService.initiatePayment()
@@ -65,6 +102,7 @@ export class PaymentsController {
 
   // ── GET /payments/history ─────────────────────────────────────────
   @Get('history')
+  @Throttle(LIMITS.read)
   @ApiOperation({
     summary: 'Get paginated payment history for current user',
     description:
@@ -83,12 +121,12 @@ export class PaymentsController {
     status: 200,
     description: 'Paginated payment records with channel labels',
   })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async getHistory(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('limit') limit?: number,
-    @Query('cursor') cursor?: string,
+    @Query() query: PaymentHistoryQueryDto,
   ): Promise<PaginatedResult<PaymentRecordDto & { channelLabel: string }>> {
-    return this.paymentsService.getHistory(user, limit ? Number(limit) : 20, cursor);
+    return this.paymentsService.getHistory(user, query.limit ?? 20, query.cursor);
   }
 
   // ── GET /payments/verify/:reference ──────────────────────────────
@@ -97,6 +135,7 @@ export class PaymentsController {
   // frontend calls this on the Paystack callback URL. It runs the same
   // settlement path as the webhook, so calling both is safe (idempotent).
   @Get('verify/:reference')
+  @Throttle(LIMITS.verify)
   @ApiOperation({
     summary: 'Verify payment by Paystack reference — callback fallback',
     description:
@@ -105,29 +144,23 @@ export class PaymentsController {
       'auto-release scheduled. Status is UNDER_REVIEW if the payment needs manual ' +
       'reconciliation (e.g. amount mismatch). Safe to call multiple times — idempotent.',
   })
-  @ApiParam({ name: 'reference', example: 'EW-PAY-ABC123DEF456GH78' })
+  @ApiParam({ name: 'reference', example: 'EW-PAY-ABC123DEF456AB78' })
   @ApiResponse({
     status: 200,
     description: 'Verification result with payment status and channel label',
   })
   @ApiResponse({ status: 404, description: 'Reference not found in our records' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async verify(
-    @Param('reference') reference: string,
+    @Param() params: ReferenceParamDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{
-    reference: string;
-    status: string;
-    channelLabel: string;
-    amount: number;
-    paidAt: string | null;
-    orderId: string;
-    message: string;
-  }> {
-    return this.paymentsService.verifyByReference(reference, user);
+  ): Promise<VerifyPaymentResponse> {
+    return this.paymentsService.verifyByReference(params.reference, user);
   }
 
   // ── GET /payments/order/:orderId ──────────────────────────────────
   @Get('order/:orderId')
+  @Throttle(LIMITS.read)
   @ApiOperation({
     summary: 'Get payment status for a specific order',
     description:
@@ -141,23 +174,17 @@ export class PaymentsController {
     description: 'Payment status summary and history for the order',
   })
   @ApiResponse({ status: 404, description: 'Order not found' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async getPaymentStatus(
-    @Param('orderId') orderId: string,
+    @Param() params: OrderIdParamDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{
-    orderId: string;
-    trackingCode: string;
-    orderStatus: string;
-    escrowStatus: string;
-    payments: (PaymentRecordDto & { channelLabel: string })[];
-    latestStatus: string;
-    isPaid: boolean;
-  }> {
-    return this.paymentsService.getPaymentStatus(orderId, user);
+  ): Promise<PaymentStatusResponse> {
+    return this.paymentsService.getPaymentStatus(params.orderId, user);
   }
 
   // ── GET /payments/orders/:orderId ─────────────────────────────────
   @Get('orders/:orderId')
+  @Throttle(LIMITS.read)
   @ApiOperation({
     summary: 'Get all payment records for an order',
     description:
@@ -166,17 +193,19 @@ export class PaymentsController {
   })
   @ApiParam({ name: 'orderId' })
   @ApiResponse({ status: 200, type: [PaymentRecordDto] })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async getByOrder(
-    @Param('orderId') orderId: string,
+    @Param() params: OrderIdParamDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<PaymentRecordDto[]> {
-    return this.paymentsService.getByOrder(orderId, user);
+    return this.paymentsService.getByOrder(params.orderId, user);
   }
 
   // ── GET /payments/:reference ──────────────────────────────────────
   // NOTE: This route must come LAST among GET routes to avoid shadowing
   // /payments/history, /payments/verify/:reference, etc.
   @Get(':reference')
+  @Throttle(LIMITS.read)
   @ApiOperation({
     summary: 'Get a payment record by Paystack reference',
     description:
@@ -184,19 +213,21 @@ export class PaymentsController {
       'Does NOT call Paystack — use /payments/verify/:reference for live verification. ' +
       'Only the buyer, seller or an admin can view it.',
   })
-  @ApiParam({ name: 'reference', example: 'EW-PAY-ABC123DEF456GH78' })
+  @ApiParam({ name: 'reference', example: 'EW-PAY-ABC123DEF456AB78' })
   @ApiResponse({ status: 200, type: PaymentRecordDto })
   @ApiResponse({ status: 404, description: 'Payment record not found' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async getByReference(
-    @Param('reference') reference: string,
+    @Param() params: ReferenceParamDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<PaymentRecordDto> {
-    return this.paymentsService.getByReference(reference, user);
+    return this.paymentsService.getByReference(params.reference, user);
   }
 
   // ── POST /payments/transfer ───────────────────────────────────────
   @Post('transfer')
-  @Roles('ADMIN' as any)
+  @Roles('ADMIN')
+  @Throttle(LIMITS.transfer)
   @ApiOperation({
     summary: '[ADMIN] Initiate Paystack transfer to seller bank account',
     description:
@@ -212,22 +243,26 @@ export class PaymentsController {
     description: 'Order not COMPLETED, escrow not RELEASED, or seller bank details missing',
   })
   @ApiResponse({ status: 409, description: 'Transfer already initiated for this order' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async initiateTransfer(@Body() dto: InitiateTransferDto): Promise<TransferRecordDto> {
     return this.transferService.initiateTransfer(dto);
   }
 
   // ── GET /payments/orders/:orderId/transfers ───────────────────────
+  // ADMIN only. The old `@Roles('ADMIN', 'SELLER' as any)` never matched sellers,
+  // because SELLER is not a role (sellers have role USER). Letting a seller view
+  // their own payout needs an ownership check in TransferService, not a role.
   @Get('orders/:orderId/transfers')
-  @Roles('ADMIN' as any, 'SELLER' as any)
+  @Roles('ADMIN')
+  @Throttle(LIMITS.read)
   @ApiOperation({
-    summary: '[ADMIN/SELLER] Get transfer records for an order',
-    description:
-      'Returns all Paystack transfer records for an order. ' +
-      'SELLER can view their own payout status. ADMIN can view any order.',
+    summary: '[ADMIN] Get transfer records for an order',
+    description: 'Returns all Paystack transfer records for an order.',
   })
   @ApiParam({ name: 'orderId' })
   @ApiResponse({ status: 200, type: [TransferRecordDto] })
-  async getTransfers(@Param('orderId') orderId: string): Promise<TransferRecordDto[]> {
-    return this.transferService.getByOrder(orderId);
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async getTransfers(@Param() params: OrderIdParamDto): Promise<TransferRecordDto[]> {
+    return this.transferService.getByOrder(params.orderId);
   }
 }

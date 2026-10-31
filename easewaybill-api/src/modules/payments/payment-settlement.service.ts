@@ -88,11 +88,16 @@ export class PaymentSettlementService {
       );
     }
 
-    const amountNgn = verified.amount / 100;
-    if (!Number.isFinite(amountNgn) || amountNgn <= 0) {
-      return this.flag(reference, `Invalid verified amount for order ${orderId}`);
+    // If Paystack passes fees to the customer, `amount` includes the fee.
+    // Compare and hold the order amount (requested_amount) instead.
+    const orderAmountKobo = verified.requested_amount ?? verified.amount;
+    if (verified.amount < orderAmountKobo) {
+      return this.flag(
+        reference,
+        `Paid ${verified.amount} kobo is less than requested ${orderAmountKobo}`,
+      );
     }
-
+    const amountNgn = orderAmountKobo / 100;
     if (verified.currency !== 'NGN') {
       return this.flag(reference, `Currency mismatch for order ${orderId}: ${verified.currency}`);
     }
