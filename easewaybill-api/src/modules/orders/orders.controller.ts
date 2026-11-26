@@ -31,6 +31,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { FilterOrdersDto } from './dto/filter-orders.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
+import { AssignRiderDto } from './dto/assign-rider.dto';
 import type { PaginatedResult } from '../../common/dto/pagination.dto';
 
 @ApiTags('orders')
@@ -139,9 +140,6 @@ export class OrdersController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<OrderResponseDto> {
-    console.log('Controller reached');
-    console.log(id);
-    console.log(user);
     return this.ordersService.confirmByBuyer(id, user);
   }
 
@@ -160,10 +158,25 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Order or rider not found' })
   async assignRider(
     @Param('id') id: string,
-    @Body() body: { riderId: string },
+    @Body() body: AssignRiderDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<OrderResponseDto> {
     return this.ordersService.assignRider(id, body.riderId, user);
+  }
+
+  // ── PATCH /orders/:id/verify-address ─────────────────────────────
+  @Patch(':id/verify-address')
+  @Roles('ADMIN' as any)
+  @ApiOperation({ summary: '[ADMIN] Confirm order addresses' })
+  @ApiParam({ name: 'id', description: 'Order CUID' })
+  @ApiResponse({ status: 200, type: OrderResponseDto, description: 'Addresses confirmed' })
+  @ApiResponse({ status: 403, description: 'Forbidden — ADMIN role required' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async confirmAddresses(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<OrderResponseDto> {
+    return this.ordersService.confirmAddresses(id, user);
   }
 
   // ── PATCH /orders/:id/status ─────────────────────────────────────
