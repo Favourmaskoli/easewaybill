@@ -26,6 +26,12 @@ const nanoid = (size = 8): string =>
 const PLATFORM_FEE_PERCENT = 0.05;
 const RIDER_DELIVERY_PERCENT = 0.9;
 
+// Multipart forms can send missing values as the text "undefined" or "null"
+const hasMapboxId = (value?: string): boolean => {
+  const v = value?.trim();
+  return !!v && v !== 'undefined' && v !== 'null';
+};
+
 // ── Prisma include shape — used in all order queries ─────────────
 const ORDER_INCLUDE = {
   items: true,
@@ -138,7 +144,8 @@ export class OrdersService {
     // Addresses picked from a Mapbox suggestion carry a mapboxId;
     // manually typed addresses don't, and need delivery-agent confirmation
     // before dispatch.
-    const addressVerificationRequired = !dto.pickupMapboxId || !dto.deliveryMapboxId;
+    const addressVerificationRequired =
+      !hasMapboxId(dto.pickupMapboxId) || !hasMapboxId(dto.deliveryMapboxId);
 
     const itemPrice = dto.itemPrice;
     const deliveryFee = dto.deliveryFee ?? 0;
@@ -160,11 +167,11 @@ export class OrdersService {
           pickupAddress: dto.pickupAddress,
           pickupLat: dto.pickupLat,
           pickupLng: dto.pickupLng,
-          pickupMapboxId: dto.pickupMapboxId,
+          pickupMapboxId: hasMapboxId(dto.pickupMapboxId) ? dto.pickupMapboxId : null,
           deliveryAddress: dto.deliveryAddress,
           deliveryLat: dto.deliveryLat,
           deliveryLng: dto.deliveryLng,
-          deliveryMapboxId: dto.deliveryMapboxId,
+          deliveryMapboxId: hasMapboxId(dto.deliveryMapboxId) ? dto.deliveryMapboxId : null,
           addressVerificationRequired,
           buyerEmail: dto.buyerEmail,
           buyerName: dto.buyerName,
@@ -528,11 +535,15 @@ export class OrdersService {
   ): Promise<OrderResponseDto> {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      select: { id: true, status: true },
+      select: { id: true, status: true, addressVerificationRequired: true },
     });
 
     if (!order) {
       throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    if (order.addressVerificationRequired) {
+      throw new BadRequestException('Verify the order addresses before assigning a rider');
     }
 
     if (order.status !== OrderStatus.SHIPPED) {
@@ -555,6 +566,29 @@ export class OrdersService {
     });
 
     this.logger.log(`Rider [${riderId}] assigned to order [${id}]`);
+
+    return updated as unknown as OrderResponseDto;
+  }
+
+  // ── PATCH /orders/:id/verify-address ─────────────────────────────
+  async confirmAddresses(id: string, user: AuthenticatedUser): Promise<OrderResponseDto> {
+    if (user.role !== 'ADMIN') {
+      throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    const order = await this.prisma.order.findUnique({ where: { id }, select: { id: true } });
+
+    if (!order) {
+      throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    const updated = await this.prisma.order.update({
+      where: { id },
+      data: { addressVerificationRequired: false },
+      include: ORDER_INCLUDE,
+    });
+
+    this.logger.log(`Addresses confirmed for order [${id}] by [${user.id}]`);
 
     return updated as unknown as OrderResponseDto;
   }
